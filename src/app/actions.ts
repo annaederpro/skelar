@@ -2,7 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { DbTask, EnergyLevel, ResourceStatus, TaskStatus } from "@/types/gentle";
+import type {
+  DbProject,
+  DbTask,
+  EnergyLevel,
+  Priority,
+  ResourceStatus,
+  TaskStatus,
+} from "@/types/gentle";
 
 export type AuthFormState = {
   error: string | null;
@@ -73,6 +80,9 @@ export async function addTask(input: {
   title: string;
   energyLevel: EnergyLevel;
   durationMinutes: number;
+  projectId?: string | null;
+  priority?: Priority;
+  dueDate?: string | null;
 }): Promise<{ task: DbTask } | { error: string }> {
   const supabase = await createClient();
   const {
@@ -90,6 +100,9 @@ export async function addTask(input: {
       title: input.title,
       energy_level: input.energyLevel,
       duration_minutes: input.durationMinutes,
+      project_id: input.projectId ?? null,
+      priority: input.priority ?? 4,
+      due_date: input.dueDate ?? null,
     })
     .select()
     .single();
@@ -106,6 +119,14 @@ export async function toggleTaskComplete(
   nextStatus: TaskStatus,
 ): Promise<{ ok: true } | { error: string }> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
   const { error } = await supabase.from("tasks").update({ status: nextStatus }).eq("id", taskId);
 
   if (error) {
@@ -137,4 +158,34 @@ export async function updateResourceStatus(
   }
 
   return { ok: true };
+}
+
+export async function createProject(
+  name: string,
+): Promise<{ project: DbProject } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { error: "Назва проєкту не може бути порожньою." };
+  }
+
+  const { data, error } = await supabase
+    .from("projects")
+    .insert({ user_id: user.id, name: trimmed })
+    .select()
+    .single();
+
+  if (error || !data) {
+    return { error: "Не вдалося створити проєкт, спробуй ще раз." };
+  }
+
+  return { project: data as DbProject };
 }
