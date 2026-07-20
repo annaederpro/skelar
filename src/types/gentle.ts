@@ -4,11 +4,20 @@ export type TaskStatus = "todo" | "completed";
 
 export type EnergyLevel = 1 | 2 | 3;
 
+export type Priority = 1 | 2 | 3 | 4;
+
 export interface DbUser {
   id: string;
   email: string;
   current_resource_status: ResourceStatus;
   telegram_chat_id: string | null;
+  created_at: string;
+}
+
+export interface DbProject {
+  id: string;
+  user_id: string;
+  name: string;
   created_at: string;
 }
 
@@ -21,6 +30,9 @@ export interface DbTask {
   duration_minutes: number;
   is_backlog: boolean;
   created_at: string;
+  project_id: string | null;
+  priority: Priority;
+  due_date: string | null;
 }
 
 export const ENERGY_LABEL: Record<EnergyLevel, string> = {
@@ -45,4 +57,18 @@ export const RESOURCE_STATUS_LABEL: Record<ResourceStatus, string> = {
   depleted: "Виснажена",
   normal: "В нормі",
   high: "Повна сил",
+};
+
+export const PRIORITY_LABEL: Record<Priority, string> = {
+  1: "P1",
+  2: "P2",
+  3: "P3",
+  4: "P4",
+};
+
+export const PRIORITY_DOT_CLASS: Record<Priority, string> = {
+  1: "bg-rose-400",
+  2: "bg-orange-400",
+  3: "bg-sky-400",
+  4: "bg-muted-foreground/40",
 };
