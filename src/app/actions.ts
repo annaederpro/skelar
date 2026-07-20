@@ -93,6 +93,19 @@ export async function addTask(input: {
     return { error: "Сесія закінчилась, увійди ще раз." };
   }
 
+  if (input.projectId) {
+    const { data: project } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("id", input.projectId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!project) {
+      return { error: "Проєкт не знайдено." };
+    }
+  }
+
   const { data, error } = await supabase
     .from("tasks")
     .insert({

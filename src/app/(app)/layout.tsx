@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getAppToday } from "@/lib/date";
 import { AppShell } from "@/components/gentle/app-shell";
 import type { DbProject, ResourceStatus } from "@/types/gentle";
 
@@ -12,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // /login before this layout ever renders, so `user` is always present here.
   const userId = user!.id;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getAppToday();
 
   const [{ data: profile }, { data: projects }, { count: todayCount }] = await Promise.all([
     supabase.from("users").select("current_resource_status").eq("id", userId).single(),

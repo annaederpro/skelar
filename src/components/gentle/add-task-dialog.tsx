@@ -49,7 +49,15 @@ export function AddTaskDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(next) => setOpen(next)}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next === false) {
+          setErrorMessage(null);
+        }
+      }}
+    >
       <DialogTrigger className={triggerClassName}>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
