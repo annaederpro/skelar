@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { DbTask, EnergyLevel, ResourceStatus, TaskStatus } from "@/types/gentle";
 
 export type AuthFormState = {
   error: string | null;
@@ -66,4 +67,74 @@ export async function signOut(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+export async function addTask(input: {
+  title: string;
+  energyLevel: EnergyLevel;
+  durationMinutes: number;
+}): Promise<{ task: DbTask } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert({
+      user_id: user.id,
+      title: input.title,
+      energy_level: input.energyLevel,
+      duration_minutes: input.durationMinutes,
+    })
+    .select()
+    .single();
+
+  if (error || !data) {
+    return { error: "Не вдалося додати задачу, спробуй ще раз." };
+  }
+
+  return { task: data as DbTask };
+}
+
+export async function toggleTaskComplete(
+  taskId: string,
+  nextStatus: TaskStatus,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("tasks").update({ status: nextStatus }).eq("id", taskId);
+
+  if (error) {
+    return { error: "Не вдалося оновити задачу." };
+  }
+
+  return { ok: true };
+}
+
+export async function updateResourceStatus(
+  status: ResourceStatus,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const { error } = await supabase
+    .from("users")
+    .update({ current_resource_status: status })
+    .eq("id", user.id);
+
+  if (error) {
+    return { error: "Не вдалося зберегти стан ресурсу." };
+  }
+
+  return { ok: true };
 }
