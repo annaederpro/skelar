@@ -70,6 +70,25 @@ form, but not yet rendered on the card.
     neither Today nor Upcoming — only in Inbox/Browse — consistent with
     "Upcoming (scheduled tasks)" in the original request (unscheduled
     tasks aren't "upcoming").
+11. **Resource status lives in a shared React Context (`ResourceStatusProvider`),
+    not per-page state.** The layout (Server Component) fetches the
+    initial value once and seeds a client `AppShell`, which provides it
+    to both the header toggle and every page's task-filtering logic
+    (`useResourceStatus()`), so toggling in the header instantly affects
+    whichever tab is open — no separate per-page copy to keep in sync.
+12. **The FAB is the one exception to "no server refetch."** Because the
+    FAB (and its `AddTaskDialog`) now lives in the shared layout —
+    structurally outside the per-tab task list it mutates — there is no
+    direct component-state path to splice a newly created task into the
+    current page's list. `AddTaskDialog` calls `router.refresh()` after a
+    successful `addTask`, which re-runs the current route's Server
+    Component fetch (App Router's built-in mechanism for this, distinct
+    from the Server Action–level `revalidatePath` the sub-project 1
+    constraint ruled out) so the new task appears without a full page
+    navigation. Toggling completion and resource status remain purely
+    optimistic client-state updates, unchanged from sub-project 1, since
+    both stay within a single component's tree and don't cross the
+    layout/page boundary.
 
 ## Database changes (migration `0002_projects_priority.sql`)
 
@@ -151,14 +170,23 @@ list-rendering routes.
   energy picker), and a native `<input type="date">` for due date. All
   three are optional; omitting due date means `null`, omitting project
   means Inbox.
+- **`src/context/resource-status-context.tsx`** (new) — `ResourceStatusProvider`
+  (client) seeded with the layout's server-fetched initial value; owns the
+  optimistic update + rollback logic sub-project 1 built for
+  `updateResourceStatus`, exposed via a `useResourceStatus()` hook
+  (`{ resourceStatus, setResourceStatus, isDepleted }`).
+- **`src/components/gentle/app-shell.tsx`** (new) — client component
+  rendered by the layout; wraps `children` in `ResourceStatusProvider`,
+  renders the header (title, logout button, `ResourceStatusToggle`,
+  `DepletedBanner` when depleted — all reading from `useResourceStatus()`),
+  then `{children}`, then `BottomNav` and `Fab`.
 - **`src/components/gentle/task-view.tsx`** (new, generalizes
-  `task-dashboard.tsx`) — receives `initialTasks`, `initialResourceStatus`,
-  `projects` (for the dialog's project picker), and `emptyMessage`; owns
-  the same optimistic-update logic sub-project 1 built
-  (`handleToggleComplete`, `handleResourceStatusChange`) plus renders
-  `TaskList` + the resource toggle/banner. Does not render its own
-  add-task form inline anymore — creation happens via the FAB, which
-  lives in the shared layout, not per-page.
+  `task-dashboard.tsx`) — receives `initialTasks` and `emptyMessage`
+  only; reads `isDepleted` from `useResourceStatus()` for filtering (no
+  longer owns resource-status state itself) and owns
+  `handleToggleComplete` (optimistic, unchanged from sub-project 1).
+  Does not render its own add-task form inline anymore — creation
+  happens via the FAB, which lives in `AppShell`, not per-page.
 - **`src/app/(app)/browse/page.tsx`** — Server Component: fetches
   projects with a task count per project (`select *, tasks(count)`),
   renders a simple list + a small inline "new project" form (client
@@ -212,8 +240,10 @@ submitting (same pattern as the existing title validation in
 - Voice capture — sub-project 4.
 - Project rename/delete UI, saved filters, drag-to-reorder, project
   colors/icons.
-- Realtime updates / `revalidatePath` — still reload-to-refresh, per
-  sub-project 1's constraint, carried forward.
+- Realtime updates / Server Action–level `revalidatePath` — Decision 12
+  above covers the one necessary exception (`router.refresh()` after
+  FAB-based task creation); everything else stays optimistic client
+  state, per sub-project 1's constraint, carried forward.
 
 ## Verification plan
 
