@@ -76,19 +76,20 @@ form, but not yet rendered on the card.
     to both the header toggle and every page's task-filtering logic
     (`useResourceStatus()`), so toggling in the header instantly affects
     whichever tab is open — no separate per-page copy to keep in sync.
-12. **The FAB is the one exception to "no server refetch."** Because the
-    FAB (and its `AddTaskDialog`) now lives in the shared layout —
-    structurally outside the per-tab task list it mutates — there is no
-    direct component-state path to splice a newly created task into the
-    current page's list. `AddTaskDialog` calls `router.refresh()` after a
-    successful `addTask`, which re-runs the current route's Server
-    Component fetch (App Router's built-in mechanism for this, distinct
-    from the Server Action–level `revalidatePath` the sub-project 1
-    constraint ruled out) so the new task appears without a full page
-    navigation. Toggling completion and resource status remain purely
-    optimistic client-state updates, unchanged from sub-project 1, since
-    both stay within a single component's tree and don't cross the
-    layout/page boundary.
+12. **Two components are the sanctioned exceptions to "no server refetch."**
+    `AddTaskDialog` (opened from the FAB, which lives in the shared layout
+    — structurally outside the per-tab task list it mutates) and
+    `CreateProjectForm` (rendered on `/browse` alongside a server-rendered
+    project list it has no client-state path into) both call
+    `router.refresh()` after a successful mutation, which re-runs the
+    current route's Server Component fetch (App Router's built-in
+    mechanism for this, distinct from the Server Action–level
+    `revalidatePath` the sub-project 1 constraint ruled out) so the new
+    task/project appears without a full page navigation. Toggling
+    completion and resource status remain purely optimistic client-state
+    updates, unchanged from sub-project 1, since both stay within a
+    single component's tree and don't cross a layout/page or
+    server/client sibling boundary.
 
 ## Database changes (migration `0002_projects_priority.sql`)
 
@@ -241,9 +242,10 @@ submitting (same pattern as the existing title validation in
 - Project rename/delete UI, saved filters, drag-to-reorder, project
   colors/icons.
 - Realtime updates / Server Action–level `revalidatePath` — Decision 12
-  above covers the one necessary exception (`router.refresh()` after
-  FAB-based task creation); everything else stays optimistic client
-  state, per sub-project 1's constraint, carried forward.
+  above covers the two necessary exceptions (`router.refresh()` after
+  FAB-based task creation and after project creation in Browse);
+  everything else stays optimistic client state, per sub-project 1's
+  constraint, carried forward.
 
 ## Verification plan
 
