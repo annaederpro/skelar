@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Mic, Loader2, Sparkles } from "lucide-react";
+import { Plus, Loader2, Sparkles } from "lucide-react";
 import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
 import {
   EFFORT_WORD,
@@ -219,42 +219,20 @@ export function QuickAddTaskForm({
             Слухаю… відпусти кнопку, коли договориш
           </p>
         )}
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            className="h-9 flex-1 rounded-full"
-            disabled={isParsing || isListening}
-            onClick={() => void runParse(aiTextRef.current)}
-          >
-            {isParsing ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="size-3.5" />
-            )}
-            {isParsing ? "Розбираю..." : "Створити"}
-          </Button>
-          {isMicSupported && (
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-lg"
-              disabled={isParsing}
-              onPointerDown={handleMicPress}
-              onPointerUp={handleMicRelease}
-              onPointerLeave={handleMicRelease}
-              onPointerCancel={handleMicRelease}
-              onContextMenu={(e) => e.preventDefault()}
-              className={cn(
-                "touch-none select-none",
-                isListening && "animate-pulse border-coral bg-coral text-white hover:bg-coral",
-              )}
-              aria-label="Утримуй, щоб наговорити задачу"
-            >
-              <Mic className="size-4" />
-            </Button>
+        <Button
+          type="button"
+          size="sm"
+          className="h-9 w-full rounded-full"
+          disabled={isParsing || isListening}
+          onClick={() => void runParse(aiTextRef.current)}
+        >
+          {isParsing ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="size-3.5" />
           )}
-        </div>
+          {isParsing ? "Розбираю..." : "Створити"}
+        </Button>
       </div>
     );
   }
