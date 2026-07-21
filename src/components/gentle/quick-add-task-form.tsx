@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Mic, Square, Loader2 } from "lucide-react";
+import { Plus, Mic, Loader2, Sparkles } from "lucide-react";
 import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
 import {
   EFFORT_WORD,
@@ -37,7 +37,11 @@ export function QuickAddTaskForm({
   disabledEnergyLevels = [],
   projects = [],
 }: QuickAddTaskFormProps) {
-  const [mode, setMode] = useState<"manual" | "ai">("manual");
+  const [step, setStep] = useState<"input" | "review">("input");
+  const [aiText, setAiText] = useState("");
+  const [isParsing, setIsParsing] = useState(false);
+  const [aiNotice, setAiNotice] = useState<string | null>(null);
+
   const [title, setTitle] = useState("");
   const [energyLevel, setEnergyLevel] = useState<EnergyLevel>(1);
   const [duration, setDuration] = useState(30);
@@ -45,9 +49,45 @@ export function QuickAddTaskForm({
   const [priority, setPriority] = useState<Priority>(4);
   const [dueDate, setDueDate] = useState("");
 
-  const [aiText, setAiText] = useState("");
-  const [isParsing, setIsParsing] = useState(false);
-  const [parseError, setParseError] = useState<string | null>(null);
+  // Latest text, readable from speech callbacks without stale-closure issues.
+  const aiTextRef = useRef("");
+  // Finalized speech chunks accumulate here; interim words render on top of it.
+  const finalTextRef = useRef("");
+  // Set on mic release so recognition's async end event triggers the parse.
+  const parseOnEndRef = useRef(false);
+
+  const setText = (value: string) => {
+    aiTextRef.current = value;
+    setAiText(value);
+  };
+
+  const runParse = async (rawText: string) => {
+    const trimmed = rawText.trim();
+    if (!trimmed || isParsing) return;
+
+    setIsParsing(true);
+    const result = await onParseWithAI(trimmed);
+    setIsParsing(false);
+
+    if (result.ok) {
+      setTitle(result.title);
+      setPriority(result.priority ?? 4);
+      setEnergyLevel(result.energyLevel ?? 1);
+      setDuration(result.durationMinutes ?? 30);
+      setProjectId(result.projectId);
+      setDueDate(result.dueDate ?? "");
+      setAiNotice(null);
+    } else {
+      setTitle(result.rawText);
+      setPriority(4);
+      setEnergyLevel(1);
+      setDuration(30);
+      setProjectId(null);
+      setDueDate("");
+      setAiNotice("AI-розбір не спрацював — перевір поля перед створенням.");
+    }
+    setStep("review");
+  };
 
   const {
     isSupported: isMicSupported,
@@ -55,9 +95,46 @@ export function QuickAddTaskForm({
     start: startListening,
     stop: stopListening,
   } = useSpeechRecognition({
-    onResult: (transcript) =>
-      setAiText((prev) => (prev ? `${prev} ${transcript}` : transcript)),
+    onResult: (chunk) => {
+      finalTextRef.current = `${finalTextRef.current} ${chunk}`.trim();
+      setText(finalTextRef.current);
+    },
+    onInterim: (interim) => {
+      setText(`${finalTextRef.current} ${interim}`.trim());
+    },
+    onEnd: () => {
+      if (parseOnEndRef.current) {
+        parseOnEndRef.current = false;
+        void runParse(aiTextRef.current);
+      }
+    },
   });
+
+  const handleMicPress = () => {
+    if (isListening) return;
+    finalTextRef.current = aiTextRef.current.trim();
+    parseOnEndRef.current = false;
+    startListening();
+  };
+
+  const handleMicRelease = () => {
+    if (!isListening) return;
+    parseOnEndRef.current = true;
+    stopListening();
+  };
+
+  const resetAll = () => {
+    setStep("input");
+    setText("");
+    finalTextRef.current = "";
+    setAiNotice(null);
+    setTitle("");
+    setEnergyLevel(1);
+    setDuration(30);
+    setProjectId(null);
+    setPriority(4);
+    setDueDate("");
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,200 +149,190 @@ export function QuickAddTaskForm({
       priority,
       dueDate: dueDate || null,
     });
-    setTitle("");
-    setEnergyLevel(1);
-    setDuration(30);
-    setProjectId(null);
-    setPriority(4);
-    setDueDate("");
-  };
-
-  const handleParse = async () => {
-    const trimmed = aiText.trim();
-    if (!trimmed) {
-      setParseError("Введіть текст.");
-      return;
-    }
-
-    setIsParsing(true);
-    setParseError(null);
-    const result = await onParseWithAI(trimmed);
-    setIsParsing(false);
-
-    if (result.ok) {
-      setTitle(result.title);
-      if (result.priority) setPriority(result.priority);
-      if (result.energyLevel) setEnergyLevel(result.energyLevel);
-      if (result.durationMinutes) setDuration(result.durationMinutes);
-      setProjectId(result.projectId);
-      setDueDate(result.dueDate ?? "");
-    } else {
-      setTitle(result.rawText);
-      setParseError("Не вдалося розібрати автоматично, перевірте поля.");
-    }
-    setMode("manual");
+    resetAll();
   };
 
   const activeBucket = priorityBucket(priority);
 
-  return (
-    <div className="flex flex-col gap-3 rounded-[20px] border border-line bg-card p-3">
-      <div className="flex gap-1 rounded-full bg-muted p-1 text-xs font-bold">
-        <button
-          type="button"
-          onClick={() => setMode("manual")}
-          className={cn(
-            "flex-1 rounded-full py-1.5 transition-colors",
-            mode === "manual" ? "bg-card text-ink" : "text-ink-soft",
-          )}
-        >
-          Вручну
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("ai")}
-          className={cn(
-            "flex-1 rounded-full py-1.5 transition-colors",
-            mode === "ai" ? "bg-card text-ink" : "text-ink-soft",
-          )}
-        >
-          AI
-        </button>
-      </div>
-
-      {mode === "ai" ? (
-        <div className="flex flex-col gap-2">
-          <textarea
-            value={aiText}
-            onChange={(e) => setAiText(e.target.value)}
-            placeholder="Напиши або скажи, що потрібно зробити..."
-            rows={3}
-            autoFocus
-            className="w-full resize-none rounded-md border border-line bg-transparent px-3 py-2 text-sm"
-          />
-          {parseError && <p className="text-xs text-coral">{parseError}</p>}
-          <div className="flex items-center gap-2">
-            {isMicSupported && (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                onClick={() => (isListening ? stopListening() : startListening())}
-                aria-label={isListening ? "Зупинити запис" : "Записати голосом"}
-              >
-                {isListening ? <Square className="size-3.5" /> : <Mic className="size-3.5" />}
-              </Button>
-            )}
+  if (step === "input") {
+    return (
+      <div className="flex flex-col gap-3 rounded-[20px] border border-line bg-card p-3">
+        <textarea
+          value={aiText}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Напиши або наговори задачу..."
+          rows={3}
+          autoFocus
+          className="w-full resize-none rounded-md border border-line bg-transparent px-3 py-2 text-sm"
+        />
+        {isListening && (
+          <p className="text-center text-xs font-semibold text-coral">
+            Слухаю… відпусти кнопку, коли договориш
+          </p>
+        )}
+        <div className="flex items-center gap-2">
+          {isMicSupported && (
             <Button
               type="button"
-              size="sm"
-              className="flex-1 rounded-full"
+              variant="outline"
+              size="icon-lg"
               disabled={isParsing}
-              onClick={handleParse}
+              onPointerDown={handleMicPress}
+              onPointerUp={handleMicRelease}
+              onPointerLeave={handleMicRelease}
+              onPointerCancel={handleMicRelease}
+              onContextMenu={(e) => e.preventDefault()}
+              className={cn(
+                "touch-none select-none",
+                isListening && "animate-pulse border-coral bg-coral text-white hover:bg-coral",
+              )}
+              aria-label="Утримуй, щоб наговорити задачу"
             >
-              {isParsing && <Loader2 className="size-3.5 animate-spin" />}
-              Розібрати
+              <Mic className="size-4" />
             </Button>
-          </div>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <Input
-            placeholder="Що потрібно зробити?"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            autoFocus
-          />
-
-          {/* effort (energy) */}
-          <div className="flex items-center gap-1.5">
-            {ENERGY_OPTIONS.map((level) => {
-              const isDisabled = disabledEnergyLevels.includes(level);
-              return (
-                <button
-                  key={level}
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() => setEnergyLevel(level)}
-                  className={cn(
-                    "flex size-8 items-center justify-center rounded-full border-2 transition-colors disabled:cursor-not-allowed disabled:opacity-30",
-                    energyLevel === level ? "border-sea" : "border-transparent",
-                  )}
-                  aria-label={`Зусилля: ${EFFORT_WORD[level]}`}
-                >
-                  <span
-                    className={cn(
-                      "size-3 rounded-full",
-                      level <= energyLevel ? "bg-sea" : "bg-line",
-                    )}
-                  />
-                </button>
-              );
-            })}
-            <span className="text-xs text-ink-soft">{EFFORT_WORD[energyLevel]}</span>
-
-            <Input
-              type="number"
-              min={5}
-              step={5}
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value) || 0)}
-              className="ml-2 w-20"
-            />
-            <span className="text-xs text-ink-soft">хв</span>
-          </div>
-
-          {/* priority — 3 human buckets */}
-          <div className="flex items-center gap-2">
-            {PRIORITY_BUCKETS.map(({ bucket, value }) => (
-              <button
-                key={bucket}
-                type="button"
-                onClick={() => setPriority(value)}
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-xs font-bold transition-colors",
-                  activeBucket === bucket
-                    ? "border-sea bg-sea-soft text-sea-deep"
-                    : "border-line bg-card text-ink-soft",
-                )}
-                aria-label={`Пріоритет: ${PRIORITY_BUCKET_LABEL[bucket]}`}
-                aria-pressed={activeBucket === bucket}
-              >
-                {PRIORITY_BUCKET_LABEL[bucket]}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <select
-              value={projectId ?? ""}
-              onChange={(e) => setProjectId(e.target.value || null)}
-              aria-label="Проєкт"
-              className="h-9 flex-1 rounded-md border border-line bg-transparent px-3 text-sm"
-            >
-              <option value="">Inbox</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              aria-label="Дата виконання"
-              className="h-9 rounded-md border border-line bg-transparent px-3 text-sm text-ink-soft"
-            />
-          </div>
-
-          <Button type="submit" size="sm" className="w-full rounded-full">
-            <Plus className="size-4" />
-            Додати
+          )}
+          <Button
+            type="button"
+            size="sm"
+            className="h-9 flex-1 rounded-full"
+            disabled={isParsing || isListening}
+            onClick={() => void runParse(aiTextRef.current)}
+          >
+            {isParsing ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="size-3.5" />
+            )}
+            {isParsing ? "Розбираю..." : "Створити"}
           </Button>
-        </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-3 rounded-[20px] border border-line bg-card p-3"
+    >
+      {aiNotice ? (
+        <p className="rounded-xl bg-coral-soft/60 px-3 py-2 text-center text-xs text-coral">
+          {aiNotice}
+        </p>
+      ) : (
+        <p className="text-center text-xs text-ink-soft">
+          ✨ Ось що я зрозумів — підправ, якщо треба
+        </p>
       )}
-    </div>
+
+      <Input
+        placeholder="Що потрібно зробити?"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        autoFocus
+      />
+
+      {/* effort (energy) */}
+      <div className="flex items-center gap-1.5">
+        {ENERGY_OPTIONS.map((level) => {
+          const isDisabled = disabledEnergyLevels.includes(level);
+          return (
+            <button
+              key={level}
+              type="button"
+              disabled={isDisabled}
+              onClick={() => setEnergyLevel(level)}
+              className={cn(
+                "flex size-8 items-center justify-center rounded-full border-2 transition-colors disabled:cursor-not-allowed disabled:opacity-30",
+                energyLevel === level ? "border-sea" : "border-transparent",
+              )}
+              aria-label={`Зусилля: ${EFFORT_WORD[level]}`}
+            >
+              <span
+                className={cn(
+                  "size-3 rounded-full",
+                  level <= energyLevel ? "bg-sea" : "bg-line",
+                )}
+              />
+            </button>
+          );
+        })}
+        <span className="text-xs text-ink-soft">{EFFORT_WORD[energyLevel]}</span>
+
+        <Input
+          type="number"
+          min={5}
+          step={5}
+          value={duration}
+          onChange={(e) => setDuration(Number(e.target.value) || 0)}
+          className="ml-2 w-20"
+        />
+        <span className="text-xs text-ink-soft">хв</span>
+      </div>
+
+      {/* priority — 3 human buckets */}
+      <div className="flex items-center gap-2">
+        {PRIORITY_BUCKETS.map(({ bucket, value }) => (
+          <button
+            key={bucket}
+            type="button"
+            onClick={() => setPriority(value)}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-bold transition-colors",
+              activeBucket === bucket
+                ? "border-sea bg-sea-soft text-sea-deep"
+                : "border-line bg-card text-ink-soft",
+            )}
+            aria-label={`Пріоритет: ${PRIORITY_BUCKET_LABEL[bucket]}`}
+            aria-pressed={activeBucket === bucket}
+          >
+            {PRIORITY_BUCKET_LABEL[bucket]}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <select
+          value={projectId ?? ""}
+          onChange={(e) => setProjectId(e.target.value || null)}
+          aria-label="Проєкт"
+          className="h-9 flex-1 rounded-md border border-line bg-transparent px-3 text-sm"
+        >
+          <option value="">Inbox</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          aria-label="Дата виконання"
+          className="h-9 rounded-md border border-line bg-transparent px-3 text-sm text-ink-soft"
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="rounded-full"
+          onClick={() => {
+            setStep("input");
+            setAiNotice(null);
+          }}
+        >
+          ← Назад
+        </Button>
+        <Button type="submit" size="sm" className="h-9 flex-1 rounded-full">
+          <Plus className="size-4" />
+          Додати
+        </Button>
+      </div>
+    </form>
   );
 }
