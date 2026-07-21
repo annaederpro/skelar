@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Mic, Loader2, Sparkles } from "lucide-react";
+import { Plus, Mic, Loader2, Sparkles, CalendarDays } from "lucide-react";
 import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
 import {
   EFFORT_WORD,
@@ -332,28 +332,37 @@ export function QuickAddTaskForm({
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
-        <select
-          value={projectId ?? ""}
-          onChange={(e) => setProjectId(e.target.value || null)}
-          aria-label="Проєкт"
-          className="h-9 min-w-0 flex-1 rounded-md border border-line bg-transparent px-3 text-sm"
-        >
-          <option value="">Всі задачі</option>
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name}
-            </option>
-          ))}
-        </select>
+      <div className="flex items-end gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="px-0.5 text-[11px] font-bold text-ink-soft">Проєкт</span>
+          <select
+            value={projectId ?? ""}
+            onChange={(e) => setProjectId(e.target.value || null)}
+            aria-label="Проєкт"
+            className="h-9 min-w-0 rounded-md border border-line bg-transparent px-3 text-sm"
+          >
+            <option value="">Всі задачі</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          aria-label="Дата виконання"
-          className="h-9 w-[132px] shrink-0 rounded-md border border-line bg-transparent px-2 text-sm text-ink-soft"
-        />
+        <div className="flex shrink-0 flex-col gap-1">
+          <span className="px-0.5 text-[11px] font-bold text-ink-soft">Дата виконання</span>
+          <div className="relative">
+            <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ink-soft" />
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              aria-label="Дата виконання"
+              className="h-9 w-[140px] rounded-md border border-line bg-transparent py-2 pl-8 pr-2 text-sm text-ink-soft"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
