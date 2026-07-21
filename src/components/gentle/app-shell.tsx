@@ -37,7 +37,7 @@ function AppHeader({ openTasks }: { openTasks: DbTask[] }) {
       <p className="text-[15px] text-ink-soft">Скільки в тебе енергії зараз?</p>
       <ResourceStatusToggle value={resourceStatus} onChange={setResourceStatus} />
       {showFocus && <FocusCard tasks={openTasks} />}
-      {isDepleted && <DepletedBanner />}
+      {showFocus && isDepleted && <DepletedBanner />}
     </header>
   );
 }
