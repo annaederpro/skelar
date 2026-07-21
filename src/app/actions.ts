@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { parseTaskWithOpenRouter, type ParseTaskResult } from "@/lib/ai/parse-task";
+import type { ParseTaskResult } from "@/lib/ai/parse-task";
+import { parseTaskForUser } from "@/lib/ai/parse-task-for-user";
+import { insertTaskForUser } from "@/lib/tasks/insert-task";
 import type {
   DbProject,
   DbTask,
@@ -95,39 +97,7 @@ export async function addTask(input: {
     return { error: "Сесія закінчилась, увійди ще раз." };
   }
 
-  if (input.projectId) {
-    const { data: project } = await supabase
-      .from("projects")
-      .select("id")
-      .eq("id", input.projectId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!project) {
-      return { error: "Проєкт не знайдено." };
-    }
-  }
-
-  const { data, error } = await supabase
-    .from("tasks")
-    .insert({
-      user_id: user.id,
-      title: input.title,
-      energy_level: input.energyLevel,
-      duration_minutes: input.durationMinutes,
-      project_id: input.projectId ?? null,
-      priority: input.priority ?? 4,
-      due_date: input.dueDate ?? null,
-      due_time: input.dueDate ? (input.dueTime ?? null) : null,
-    })
-    .select()
-    .single();
-
-  if (error || !data) {
-    return { error: "Не вдалося додати задачу, спробуй ще раз." };
-  }
-
-  return { task: data as DbTask };
+  return insertTaskForUser(supabase, user.id, input);
 }
 
 export async function updateTask(
@@ -318,11 +288,5 @@ export async function parseTaskWithAI(rawText: string): Promise<ParseTaskResult>
     return { ok: false, rawText };
   }
 
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("id, name")
-    .eq("user_id", user.id);
-
-  const todayIso = new Date().toISOString().slice(0, 10);
-  return parseTaskWithOpenRouter(rawText, projects ?? [], todayIso);
+  return parseTaskForUser(supabase, user.id, rawText);
 }
