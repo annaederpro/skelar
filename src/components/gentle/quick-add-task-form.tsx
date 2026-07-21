@@ -1,16 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Mic, Loader2, Sparkles, CalendarDays } from "lucide-react";
+import { Mic, Loader2, Sparkles, Plus } from "lucide-react";
 import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
-import {
-  EFFORT_WORD,
-  priorityBucket,
-  PRIORITY_BUCKETS,
-  PRIORITY_BUCKET_LABEL,
-} from "@/types/gentle";
+import { type DurationUnit, splitMinutesToDuration, parseDurationMinutes } from "@/types/gentle";
+import { TaskFieldsForm } from "@/components/gentle/task-fields-form";
 import { cn } from "@/lib/utils";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import type { ParseTaskResult } from "@/lib/ai/parse-task";
@@ -27,18 +22,6 @@ interface QuickAddTaskFormProps {
   onParseWithAI: (rawText: string) => Promise<ParseTaskResult>;
   disabledEnergyLevels?: EnergyLevel[];
   projects?: DbProject[];
-}
-
-const ENERGY_OPTIONS: EnergyLevel[] = [1, 2, 3];
-
-type DurationUnit = "min" | "hour";
-
-// Long tasks read as hours ("3" + год), short ones as minutes ("15" + хв).
-function splitMinutes(minutes: number): { value: string; unit: DurationUnit } {
-  if (minutes >= 60 && minutes % 30 === 0) {
-    return { value: String(minutes / 60), unit: "hour" };
-  }
-  return { value: String(minutes), unit: "min" };
 }
 
 export function QuickAddTaskForm({
@@ -64,15 +47,9 @@ export function QuickAddTaskForm({
   const [dueDate, setDueDate] = useState("");
 
   const setDurationFromMinutes = (minutes: number) => {
-    const { value, unit } = splitMinutes(minutes);
+    const { value, unit } = splitMinutesToDuration(minutes);
     setDurationValue(value);
     setDurationUnit(unit);
-  };
-
-  const durationInMinutes = (): number => {
-    const n = Number(durationValue.replace(",", "."));
-    if (!Number.isFinite(n) || n <= 0) return 30;
-    return Math.round(durationUnit === "hour" ? n * 60 : n);
   };
 
   // Latest text, readable from speech callbacks without stale-closure issues.
@@ -170,15 +147,13 @@ export function QuickAddTaskForm({
     onAdd({
       title: trimmed,
       energyLevel,
-      durationMinutes: durationInMinutes(),
+      durationMinutes: parseDurationMinutes(durationValue, durationUnit),
       projectId,
       priority,
       dueDate: dueDate || null,
     });
     resetAll();
   };
-
-  const activeBucket = priorityBucket(priority);
 
   if (step === "input") {
     return (
@@ -251,119 +226,24 @@ export function QuickAddTaskForm({
         </p>
       )}
 
-      <Input
-        placeholder="Що потрібно зробити?"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        autoFocus
+      <TaskFieldsForm
+        title={title}
+        onTitleChange={setTitle}
+        energyLevel={energyLevel}
+        onEnergyLevelChange={setEnergyLevel}
+        disabledEnergyLevels={disabledEnergyLevels}
+        durationValue={durationValue}
+        onDurationValueChange={setDurationValue}
+        durationUnit={durationUnit}
+        onDurationUnitChange={setDurationUnit}
+        priority={priority}
+        onPriorityChange={setPriority}
+        projectId={projectId}
+        onProjectIdChange={setProjectId}
+        dueDate={dueDate}
+        onDueDateChange={setDueDate}
+        projects={projects}
       />
-
-      {/* effort (energy) */}
-      <div className="flex items-center gap-1.5">
-        {ENERGY_OPTIONS.map((level) => {
-          const isDisabled = disabledEnergyLevels.includes(level);
-          return (
-            <button
-              key={level}
-              type="button"
-              disabled={isDisabled}
-              onClick={() => setEnergyLevel(level)}
-              className={cn(
-                "flex size-8 items-center justify-center rounded-full border-2 transition-colors disabled:cursor-not-allowed disabled:opacity-30",
-                energyLevel === level ? "border-sea" : "border-transparent",
-              )}
-              aria-label={`Зусилля: ${EFFORT_WORD[level]}`}
-            >
-              <span
-                className={cn(
-                  "size-3 rounded-full",
-                  level <= energyLevel ? "bg-sea" : "bg-line",
-                )}
-              />
-            </button>
-          );
-        })}
-        <span className="text-xs text-ink-soft">{EFFORT_WORD[energyLevel]}</span>
-
-        <Input
-          type="text"
-          inputMode="decimal"
-          value={durationValue}
-          onChange={(e) => setDurationValue(e.target.value)}
-          aria-label="Тривалість"
-          className="ml-2 w-16"
-        />
-        <div className="flex gap-1 rounded-full bg-muted p-0.5 text-xs font-bold">
-          {(["min", "hour"] as const).map((unit) => (
-            <button
-              key={unit}
-              type="button"
-              onClick={() => setDurationUnit(unit)}
-              aria-pressed={durationUnit === unit}
-              className={cn(
-                "rounded-full px-2.5 py-1 transition-colors",
-                durationUnit === unit ? "bg-card text-ink" : "text-ink-soft",
-              )}
-            >
-              {unit === "min" ? "хв" : "год"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* priority — 3 human buckets */}
-      <div className="flex items-center gap-2">
-        {PRIORITY_BUCKETS.map(({ bucket, value }) => (
-          <button
-            key={bucket}
-            type="button"
-            onClick={() => setPriority(value)}
-            className={cn(
-              "rounded-full border px-3 py-1.5 text-xs font-bold transition-colors",
-              activeBucket === bucket
-                ? "border-sea bg-sea-soft text-sea-deep"
-                : "border-line bg-card text-ink-soft",
-            )}
-            aria-label={`Пріоритет: ${PRIORITY_BUCKET_LABEL[bucket]}`}
-            aria-pressed={activeBucket === bucket}
-          >
-            {PRIORITY_BUCKET_LABEL[bucket]}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex items-end gap-2">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="px-0.5 text-[11px] font-bold text-ink-soft">Проєкт</span>
-          <select
-            value={projectId ?? ""}
-            onChange={(e) => setProjectId(e.target.value || null)}
-            aria-label="Проєкт"
-            className="h-9 min-w-0 rounded-md border border-line bg-transparent px-3 text-sm"
-          >
-            <option value="">Всі задачі</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex shrink-0 flex-col gap-1">
-          <span className="px-0.5 text-[11px] font-bold text-ink-soft">Дата виконання</span>
-          <div className="relative">
-            <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ink-soft" />
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              aria-label="Дата виконання"
-              className="h-9 w-[140px] rounded-md border border-line bg-transparent py-2 pl-8 pr-2 text-sm text-ink-soft"
-            />
-          </div>
-        </div>
-      </div>
 
       <div className="flex items-center gap-2">
         <Button

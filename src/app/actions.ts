@@ -128,6 +128,58 @@ export async function addTask(input: {
   return { task: data as DbTask };
 }
 
+export async function updateTask(
+  taskId: string,
+  input: {
+    title: string;
+    energyLevel: EnergyLevel;
+    durationMinutes: number;
+    projectId: string | null;
+    priority: Priority;
+    dueDate: string | null;
+  },
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  if (input.projectId) {
+    const { data: project } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("id", input.projectId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!project) {
+      return { error: "Проєкт не знайдено." };
+    }
+  }
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({
+      title: input.title,
+      energy_level: input.energyLevel,
+      duration_minutes: input.durationMinutes,
+      project_id: input.projectId,
+      priority: input.priority,
+      due_date: input.dueDate,
+    })
+    .eq("id", taskId);
+
+  if (error) {
+    return { error: "Не вдалося зберегти зміни, спробуй ще раз." };
+  }
+
+  return { ok: true };
+}
+
 export async function toggleTaskComplete(
   taskId: string,
   nextStatus: TaskStatus,

@@ -45,6 +45,25 @@ export function formatDuration(minutes: number): string {
   return rest === 0 ? `${hours} год` : `${hours} год ${rest} хв`;
 }
 
+// Duration is edited as a raw string + unit ("30" + "хв" or "2" + "год") so
+// task-fields-form.tsx's input can be cleared on iOS without artifacts, and
+// converted to/from the DB's plain-minutes column at the edges.
+export type DurationUnit = "min" | "hour";
+
+// Long tasks read as hours ("3" + год), short ones as minutes ("15" + хв).
+export function splitMinutesToDuration(minutes: number): { value: string; unit: DurationUnit } {
+  if (minutes >= 60 && minutes % 30 === 0) {
+    return { value: String(minutes / 60), unit: "hour" };
+  }
+  return { value: String(minutes), unit: "min" };
+}
+
+export function parseDurationMinutes(value: string, unit: DurationUnit): number {
+  const n = Number(value.replace(",", "."));
+  if (!Number.isFinite(n) || n <= 0) return 30;
+  return Math.round(unit === "hour" ? n * 60 : n);
+}
+
 // coralQ effort words (energy_level rendered as "effort" on task cards)
 export const EFFORT_WORD: Record<EnergyLevel, string> = {
   1: "легка",

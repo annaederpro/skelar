@@ -17,6 +17,7 @@ interface TaskCardProps {
   task: DbTask;
   projectName?: string;
   onToggleComplete?: (task: DbTask) => void;
+  onEdit?: (task: DbTask) => void;
 }
 
 // "2026-07-22" → "22.07"
@@ -44,7 +45,7 @@ function EffortDots({ level }: { level: EnergyLevel }) {
   );
 }
 
-export function TaskCard({ task, projectName, onToggleComplete }: TaskCardProps) {
+export function TaskCard({ task, projectName, onToggleComplete, onEdit }: TaskCardProps) {
   const isCompleted = task.status === "completed";
   const bucket = priorityBucket(task.priority);
   const isSeeded = task.is_seeded && !isCompleted;
@@ -82,7 +83,18 @@ export function TaskCard({ task, projectName, onToggleComplete }: TaskCardProps)
         <Check className="size-[14px]" strokeWidth={3.5} />
       </button>
 
-      <div className="min-w-0 flex-1">
+      <div
+        className="min-w-0 flex-1 cursor-pointer"
+        role="button"
+        tabIndex={onEdit ? 0 : -1}
+        onClick={() => onEdit?.(task)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onEdit?.(task);
+          }
+        }}
+      >
         <div className="flex items-center gap-2">
           <span
             className={cn(

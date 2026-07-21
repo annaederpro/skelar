@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { TaskList } from "@/components/gentle/task-list";
 import { WeekStrip } from "@/components/gentle/week-strip";
 import { ProjectFilterBar, type ProjectFilter } from "@/components/gentle/project-filter-bar";
+import { EditTaskDialog } from "@/components/gentle/edit-task-dialog";
 import { toggleTaskComplete, createProject } from "@/app/actions";
 import { useProjects } from "@/context/projects-context";
 import { getAppToday } from "@/lib/date";
@@ -23,6 +24,7 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
   const [projectFilter, setProjectFilter] = useState<ProjectFilter>("all");
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
+  const [editingTask, setEditingTask] = useState<DbTask | null>(null);
   const [, startTransition] = useTransition();
   const projects = useProjects();
   const router = useRouter();
@@ -150,6 +152,7 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
                 tasks={overdueTasks}
                 projectNameById={projectNameById}
                 onToggleComplete={handleToggleComplete}
+                onEditTask={setEditingTask}
               />
             </section>
           )}
@@ -163,11 +166,24 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
                 tasks={dayTasks}
                 projectNameById={projectNameById}
                 onToggleComplete={handleToggleComplete}
+                onEditTask={setEditingTask}
               />
             </section>
           ))}
         </>
       )}
+      <EditTaskDialog
+        key={editingTask?.id ?? "none"}
+        task={editingTask}
+        projects={projects}
+        onOpenChange={(open) => {
+          if (!open) setEditingTask(null);
+        }}
+        onSaved={() => {
+          setEditingTask(null);
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { TaskList } from "@/components/gentle/task-list";
 import { ProjectFilterBar, type ProjectFilter } from "@/components/gentle/project-filter-bar";
+import { EditTaskDialog } from "@/components/gentle/edit-task-dialog";
 import { toggleTaskComplete, createProject } from "@/app/actions";
 import { useResourceStatus } from "@/context/resource-status-context";
 import { useProjects } from "@/context/projects-context";
@@ -22,6 +23,7 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   const [projectFilter, setProjectFilter] = useState<ProjectFilter>("all");
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
+  const [editingTask, setEditingTask] = useState<DbTask | null>(null);
   const [, startTransition] = useTransition();
   const { isDepleted } = useResourceStatus();
   const projects = useProjects();
@@ -114,11 +116,24 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
         tasks={visibleTasks}
         projectNameById={projectNameById}
         onToggleComplete={handleToggleComplete}
+        onEditTask={setEditingTask}
         emptyMessage={
           projectFilter !== "all" && tasks.length > 0
             ? "У цьому проєкті поки порожньо 🌊"
             : emptyMessage
         }
+      />
+      <EditTaskDialog
+        key={editingTask?.id ?? "none"}
+        task={editingTask}
+        projects={projects}
+        onOpenChange={(open) => {
+          if (!open) setEditingTask(null);
+        }}
+        onSaved={() => {
+          setEditingTask(null);
+          router.refresh();
+        }}
       />
     </div>
   );

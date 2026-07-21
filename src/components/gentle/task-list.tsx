@@ -5,6 +5,7 @@ interface TaskListProps {
   tasks: DbTask[];
   projectNameById?: Map<string, string>;
   onToggleComplete?: (task: DbTask) => void;
+  onEditTask?: (task: DbTask) => void;
   emptyMessage?: string;
 }
 
@@ -12,6 +13,7 @@ export function TaskList({
   tasks,
   projectNameById,
   onToggleComplete,
+  onEditTask,
   emptyMessage = "Задач на сьогодні поки немає. Саме час відпочити 🌿",
 }: TaskListProps) {
   if (tasks.length === 0) {
@@ -32,6 +34,7 @@ export function TaskList({
             task.project_id ? projectNameById?.get(task.project_id) : undefined
           }
           onToggleComplete={onToggleComplete}
+          onEdit={onEditTask}
         />
       ))}
     </div>
