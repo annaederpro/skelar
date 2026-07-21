@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Plus, Check } from "lucide-react";
 import { TaskList } from "@/components/gentle/task-list";
 import { toggleTaskComplete, createProject } from "@/app/actions";
@@ -30,6 +30,10 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   const { isDepleted } = useResourceStatus();
   const projects = useProjects();
   const router = useRouter();
+  const pathname = usePathname();
+  // The energy-based filter (hide deep-effort tasks) applies only on Сьогодні —
+  // other tabs show everything regardless of today's energy level.
+  const applyDepletedFilter = isDepleted && (pathname === "/today" || pathname.startsWith("/today/"));
 
   // Keep in sync with the server data whenever it's re-fetched (e.g. a
   // router.refresh() triggered by completing a task elsewhere, like Focus
@@ -47,7 +51,7 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   const visibleTasks = useMemo(() => {
     // Depleted days hide deep-effort tasks — but never important ones:
     // a "Важливо" task stays visible regardless of how heavy it is.
-    let list = isDepleted
+    let list = applyDepletedFilter
       ? tasks.filter(
           (task) => task.energy_level < 3 || priorityBucket(task.priority) === "high",
         )
@@ -58,7 +62,7 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
       list = list.filter((task) => task.project_id === projectFilter);
     }
     return list;
-  }, [tasks, isDepleted, projectFilter]);
+  }, [tasks, applyDepletedFilter, projectFilter]);
 
   const handleToggleComplete = (task: DbTask) => {
     const nextStatus = task.status === "completed" ? "todo" : "completed";
