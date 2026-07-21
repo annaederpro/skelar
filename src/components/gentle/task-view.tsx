@@ -2,22 +2,18 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Plus, Check } from "lucide-react";
 import { TaskList } from "@/components/gentle/task-list";
+import { ProjectFilterBar, type ProjectFilter } from "@/components/gentle/project-filter-bar";
 import { toggleTaskComplete, createProject } from "@/app/actions";
 import { useResourceStatus } from "@/context/resource-status-context";
 import { useProjects } from "@/context/projects-context";
 import { priorityBucket } from "@/types/gentle";
 import type { DbTask } from "@/types/gentle";
-import { cn } from "@/lib/utils";
 
 interface TaskViewProps {
   initialTasks: DbTask[];
   emptyMessage?: string;
 }
-
-// "all" shows everything, "none" shows tasks without a project, otherwise a project id.
-type ProjectFilter = "all" | "none" | string;
 
 export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   const [tasks, setTasks] = useState<DbTask[]>(initialTasks);
@@ -96,82 +92,18 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
     router.refresh();
   };
 
-  const chipClass = (isActive: boolean) =>
-    cn(
-      "shrink-0 whitespace-nowrap rounded-full border-[1.5px] px-3.5 py-[7px] text-[12.5px] font-bold transition-colors",
-      isActive
-        ? "border-sea bg-sea-soft text-sea-deep"
-        : "border-line bg-card text-ink-soft hover:text-ink",
-    );
-
   return (
     <div className="flex flex-col gap-2">
-      <div
-        className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        role="group"
-        aria-label="Фільтр за проєктом"
-      >
-        {projects.length > 0 && (
-          <>
-            <button
-              type="button"
-              onClick={() => setProjectFilter("all")}
-              aria-pressed={projectFilter === "all"}
-              className={chipClass(projectFilter === "all")}
-            >
-              Усі
-            </button>
-            <button
-              type="button"
-              onClick={() => setProjectFilter("none")}
-              aria-pressed={projectFilter === "none"}
-              className={chipClass(projectFilter === "none")}
-            >
-              Без проєкту
-            </button>
-            {projects.map((project) => (
-              <button
-                key={project.id}
-                type="button"
-                onClick={() => setProjectFilter(project.id)}
-                aria-pressed={projectFilter === project.id}
-                className={chipClass(projectFilter === project.id)}
-              >
-                {project.name}
-              </button>
-            ))}
-          </>
-        )}
-        <button
-          type="button"
-          onClick={() => setIsCreatingProject((v) => !v)}
-          aria-expanded={isCreatingProject}
-          className={cn(chipClass(false), "flex items-center gap-1")}
-        >
-          <Plus className="size-3.5" />
-          {projects.length === 0 && "Проєкт"}
-        </button>
-      </div>
-
-      {isCreatingProject && (
-        <form onSubmit={handleCreateProject} className="flex items-center gap-2">
-          <input
-            value={newProjectName}
-            onChange={(e) => setNewProjectName(e.target.value)}
-            placeholder="Назва нового проєкту"
-            autoFocus
-            aria-label="Назва нового проєкту"
-            className="h-9 min-w-0 flex-1 rounded-full border border-line bg-card px-4 text-sm"
-          />
-          <button
-            type="submit"
-            aria-label="Створити проєкт"
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sea text-white transition-colors hover:bg-sea-deep"
-          >
-            <Check className="size-4" />
-          </button>
-        </form>
-      )}
+      <ProjectFilterBar
+        projects={projects}
+        projectFilter={projectFilter}
+        onSelectFilter={setProjectFilter}
+        isCreatingProject={isCreatingProject}
+        onToggleCreating={() => setIsCreatingProject((v) => !v)}
+        newProjectName={newProjectName}
+        onNewProjectNameChange={setNewProjectName}
+        onCreateProject={handleCreateProject}
+      />
 
       {errorMessage && (
         <p className="rounded-xl bg-coral-soft/60 px-3 py-2 text-center text-sm text-coral">
