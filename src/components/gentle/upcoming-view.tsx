@@ -72,10 +72,19 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
   const handleSelectDate = (date: string) => {
     if (date < today) {
       document.getElementById("overdue-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else if (date === today) {
+      return;
+    }
+    if (date === today) {
       listTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else {
-      document.getElementById(`day-${date}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    // Sparse list: if this exact date has no section, jump to the closest
+    // later date that does, so clicking an empty day still goes somewhere.
+    const target = groupedUpcoming.has(date)
+      ? date
+      : Array.from(groupedUpcoming.keys()).find((d) => d > date);
+    if (target) {
+      document.getElementById(`day-${target}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
