@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAppToday } from "@/lib/date";
-import { TaskView } from "@/components/gentle/task-view";
+import { UpcomingView } from "@/components/gentle/upcoming-view";
 import type { DbTask } from "@/types/gentle";
 
 export default async function UpcomingPage() {
@@ -20,6 +20,6 @@ export default async function UpcomingPage() {
     .order("due_date", { ascending: true });
 
   return (
-    <TaskView initialTasks={(tasks ?? []) as DbTask[]} emptyMessage="Немає запланованих задач 🌿" />
+    <UpcomingView initialTasks={(tasks ?? []) as DbTask[]} emptyMessage="Немає запланованих задач 🌿" />
   );
 }
