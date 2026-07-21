@@ -6,7 +6,7 @@ export function DepletedBanner() {
       <Waves className="size-5 shrink-0" />
       <p className="text-sm leading-relaxed">
         Сьогодні день для відновлення. Важкі справи відпочивають — покажемо
-        лише легкі задачі.
+        лише легкі та важливі задачі.
       </p>
     </div>
   );

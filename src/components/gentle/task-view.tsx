@@ -7,6 +7,7 @@ import { TaskList } from "@/components/gentle/task-list";
 import { toggleTaskComplete, createProject } from "@/app/actions";
 import { useResourceStatus } from "@/context/resource-status-context";
 import { useProjects } from "@/context/projects-context";
+import { priorityBucket } from "@/types/gentle";
 import type { DbTask } from "@/types/gentle";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +45,13 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   );
 
   const visibleTasks = useMemo(() => {
-    let list = isDepleted ? tasks.filter((task) => task.energy_level < 3) : tasks;
+    // Depleted days hide deep-effort tasks — but never important ones:
+    // a "Важливо" task stays visible regardless of how heavy it is.
+    let list = isDepleted
+      ? tasks.filter(
+          (task) => task.energy_level < 3 || priorityBucket(task.priority) === "high",
+        )
+      : tasks;
     if (projectFilter === "none") {
       list = list.filter((task) => task.project_id === null);
     } else if (projectFilter !== "all") {
