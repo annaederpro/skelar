@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, CalendarCheck, CalendarDays, FolderOpen } from "lucide-react";
+import { Inbox, CalendarCheck, CalendarDays, Fish } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BottomNavProps {
@@ -10,17 +10,17 @@ interface BottomNavProps {
 }
 
 const TABS = [
-  { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/inbox", label: "Вхідні", icon: Inbox },
   { href: "/today", label: "Сьогодні", icon: CalendarCheck },
   { href: "/upcoming", label: "Незабаром", icon: CalendarDays },
-  { href: "/browse", label: "Огляд", icon: FolderOpen },
+  { href: "/aquarium", label: "Акваріум", icon: Fish },
 ] as const;
 
 export function BottomNav({ todayCount }: BottomNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky bottom-0 z-30 flex items-center justify-around border-t bg-background/95 px-2 py-2 backdrop-blur">
+    <nav className="sticky bottom-0 z-30 grid grid-cols-4 border-t border-line bg-paper/90 px-2 pb-3.5 pt-2.5 backdrop-blur-md">
       {TABS.map(({ href, label, icon: Icon }) => {
         const isActive = pathname === href || pathname.startsWith(`${href}/`);
         return (
@@ -28,14 +28,14 @@ export function BottomNav({ todayCount }: BottomNavProps) {
             key={href}
             href={href}
             className={cn(
-              "relative flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-xs transition-colors",
-              isActive ? "text-rose-500" : "text-muted-foreground hover:text-foreground",
+              "relative flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-[11.5px] font-bold transition-colors",
+              isActive ? "text-sea-deep" : "text-ink-soft hover:text-ink",
             )}
           >
             <Icon className="size-5" />
             {label}
             {href === "/today" && todayCount > 0 && (
-              <span className="absolute -top-0.5 right-1 flex size-4 items-center justify-center rounded-full bg-rose-400 text-[10px] font-medium text-white">
+              <span className="absolute -top-1 right-[calc(50%-20px)] flex h-[17px] min-w-[17px] items-center justify-center rounded-[9px] bg-coral px-1 text-[10px] font-bold text-white">
                 {todayCount}
               </span>
             )}

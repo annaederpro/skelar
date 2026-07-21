@@ -7,28 +7,31 @@ import { ResourceStatusToggle } from "@/components/gentle/resource-status-toggle
 import { DepletedBanner } from "@/components/gentle/depleted-banner";
 import { BottomNav } from "@/components/gentle/bottom-nav";
 import { Fab } from "@/components/gentle/fab";
+import { Wordmark } from "@/components/gentle/wordmark";
+import { FocusCard } from "@/components/gentle/focus-card";
 import { signOut } from "@/app/actions";
-import type { DbProject, ResourceStatus } from "@/types/gentle";
+import type { DbProject, DbTask, ResourceStatus } from "@/types/gentle";
 
-function AppHeader() {
+function AppHeader({ openTasks }: { openTasks: DbTask[] }) {
   const { resourceStatus, setResourceStatus, isDepleted } = useResourceStatus();
 
   return (
-    <header className="flex flex-col items-center gap-4 px-4 pt-6">
+    <header className="flex flex-col gap-4 px-4 pt-6">
       <div className="flex w-full items-center justify-between">
-        <span className="size-5" aria-hidden />
-        <h1 className="text-lg font-semibold">Gentle Productivity</h1>
+        <Wordmark />
         <form action={signOut}>
           <button
             type="submit"
             aria-label="Вийти"
-            className="text-muted-foreground hover:text-foreground"
+            className="text-ink-soft transition-colors hover:text-ink"
           >
             <LogOut className="size-5" />
           </button>
         </form>
       </div>
+      <p className="text-[15px] text-ink-soft">Скільки в тебе енергії зараз?</p>
       <ResourceStatusToggle value={resourceStatus} onChange={setResourceStatus} />
+      <FocusCard tasks={openTasks} />
       {isDepleted && <DepletedBanner />}
     </header>
   );
@@ -38,6 +41,7 @@ interface AppShellProps {
   initialResourceStatus: ResourceStatus;
   projects: DbProject[];
   todayCount: number;
+  openTasks: DbTask[];
   children: ReactNode;
 }
 
@@ -45,12 +49,13 @@ export function AppShell({
   initialResourceStatus,
   projects,
   todayCount,
+  openTasks,
   children,
 }: AppShellProps) {
   return (
     <ResourceStatusProvider initialResourceStatus={initialResourceStatus}>
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background">
-        <AppHeader />
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+        <AppHeader openTasks={openTasks} />
         <div className="flex-1 px-4 py-4">{children}</div>
         <BottomNav todayCount={todayCount} />
       </div>
