@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { TaskList } from "@/components/gentle/task-list";
 import { toggleTaskComplete } from "@/app/actions";
 import { useResourceStatus } from "@/context/resource-status-context";
@@ -13,9 +14,19 @@ interface TaskViewProps {
 
 export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   const [tasks, setTasks] = useState<DbTask[]>(initialTasks);
+  const [syncedTasks, setSyncedTasks] = useState(initialTasks);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const { isDepleted } = useResourceStatus();
+  const router = useRouter();
+
+  // Keep in sync with the server data whenever it's re-fetched (e.g. a
+  // router.refresh() triggered by completing a task elsewhere, like Focus
+  // mode) — useState only takes its initial value once otherwise.
+  if (initialTasks !== syncedTasks) {
+    setSyncedTasks(initialTasks);
+    setTasks(initialTasks);
+  }
 
   const visibleTasks = useMemo(
     () => (isDepleted ? tasks.filter((task) => task.energy_level < 3) : tasks),
@@ -31,7 +42,9 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
       if ("error" in result) {
         setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: task.status } : t)));
         setErrorMessage(result.error);
+        return;
       }
+      router.refresh();
     });
   };
 

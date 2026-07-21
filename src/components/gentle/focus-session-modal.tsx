@@ -30,6 +30,7 @@ function fmt(totalSeconds: number): string {
 export function FocusSessionModal({ task, onClose, onCelebrate, onLeaveEgg }: FocusSessionModalProps) {
   const [elapsed, setElapsed] = useState(0);
   const [pending, setPending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [trackedTaskId, setTrackedTaskId] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const noise = useOceanNoise();
@@ -37,13 +38,18 @@ export function FocusSessionModal({ task, onClose, onCelebrate, onLeaveEgg }: Fo
 
   const targetSec = task ? task.duration_minutes * 60 : 0;
 
-  // Reset the visible timer the moment a *different* task starts a session.
+  // Reset the visible timer the moment a session (re)starts. trackedTaskId
+  // is cleared to null on close, so reopening the *same* task after leaving
+  // it still restarts elapsed at 0 instead of resuming the old time.
   // Setting state during render (rather than in an effect) is React's
   // documented pattern for "adjusting state when a prop changes" — it
   // re-renders before painting, so there's no flicker and no extra effect.
-  if (task && task.id !== trackedTaskId) {
+  if (!task && trackedTaskId !== null) {
+    setTrackedTaskId(null);
+  } else if (task && task.id !== trackedTaskId) {
     setTrackedTaskId(task.id);
     setElapsed(0);
+    setErrorMessage(null);
   }
 
   useEffect(() => {
@@ -67,11 +73,13 @@ export function FocusSessionModal({ task, onClose, onCelebrate, onLeaveEgg }: Fo
     setPending(true);
     const result = await finishFocusSession(task.id);
     setPending(false);
-    closeAndStopNoise();
-    if (!("error" in result)) {
-      onCelebrate(task.is_seeded ? "turtle" : "fish", task.title);
-      router.refresh();
+    if ("error" in result) {
+      setErrorMessage(result.error);
+      return;
     }
+    closeAndStopNoise();
+    onCelebrate(task.is_seeded ? "turtle" : "fish", task.title);
+    router.refresh();
   };
 
   const handleLeave = async () => {
@@ -79,17 +87,19 @@ export function FocusSessionModal({ task, onClose, onCelebrate, onLeaveEgg }: Fo
     setPending(true);
     const result = await leaveFocusSession(task.id);
     setPending(false);
-    closeAndStopNoise();
-    if (!("error" in result)) {
-      onLeaveEgg(task.title);
-      router.refresh();
+    if ("error" in result) {
+      setErrorMessage(result.error);
+      return;
     }
+    closeAndStopNoise();
+    onLeaveEgg(task.title);
+    router.refresh();
   };
 
   const progress = targetSec > 0 ? Math.min(elapsed / targetSec, 1) : 0;
 
   return (
-    <Dialog open={task !== null} onOpenChange={(next) => !next && closeAndStopNoise()}>
+    <Dialog open={task !== null} onOpenChange={(next) => !next && !pending && closeAndStopNoise()}>
       <DialogContent className="text-center">
         {task && (
           <>
@@ -138,6 +148,12 @@ export function FocusSessionModal({ task, onClose, onCelebrate, onLeaveEgg }: Fo
             <p className="mx-auto my-3.5 max-w-[260px] text-[13.5px] leading-relaxed text-ink-soft">
               Один крок за раз. Немає зворотного відліку з тиском — просто побудь тут, скільки зможеш.
             </p>
+
+            {errorMessage && (
+              <p className="mb-3 rounded-xl bg-coral-soft/60 px-3 py-2 text-center text-sm text-coral">
+                {errorMessage}
+              </p>
+            )}
 
             <div className="flex gap-2.5">
               <Button

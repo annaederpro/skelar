@@ -52,6 +52,7 @@ export function TaskCard({ task, onToggleComplete }: TaskCardProps) {
         className={cn(
           "absolute inset-y-0 left-0 w-1",
           isSeeded ? "bg-sea" : PRIORITY_BUCKET_BAR_CLASS[bucket],
+          isCompleted && "opacity-50",
         )}
         aria-hidden
       />
@@ -71,10 +72,10 @@ export function TaskCard({ task, onToggleComplete }: TaskCardProps) {
       </button>
 
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           <span
             className={cn(
-              "text-[15px] font-semibold leading-tight",
+              "min-w-0 flex-1 truncate text-[15px] font-semibold leading-tight",
               isCompleted && "text-ink-soft line-through decoration-line",
             )}
           >
@@ -82,7 +83,7 @@ export function TaskCard({ task, onToggleComplete }: TaskCardProps) {
           </span>
           <span
             className={cn(
-              "rounded-full px-[9px] py-[3px] text-[10.5px] font-extrabold",
+              "shrink-0 rounded-full px-[9px] py-[3px] text-[10.5px] font-extrabold",
               PRIORITY_BUCKET_PILL_CLASS[bucket],
               isCompleted && "opacity-50",
             )}

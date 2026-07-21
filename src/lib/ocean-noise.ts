@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 export function useOceanNoise() {
   const [isPlaying, setIsPlaying] = useState(false);
   const ctxRef = useRef<AudioContext | null>(null);
+  const bufferRef = useRef<AudioBuffer | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const lfoRef = useRef<OscillatorNode | null>(null);
@@ -31,16 +32,19 @@ export function useOceanNoise() {
     ctxRef.current = ctx;
     if (ctx.state === "suspended") void ctx.resume();
 
-    // 2 seconds of noise, looped
-    const bufferSize = ctx.sampleRate * 2;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
+    // 2 seconds of noise, looped — generated once and reused across toggles.
+    if (!bufferRef.current) {
+      const bufferSize = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      bufferRef.current = buffer;
     }
 
     const source = ctx.createBufferSource();
-    source.buffer = buffer;
+    source.buffer = bufferRef.current;
     source.loop = true;
 
     // soften harsh white noise into a "shhh" wash

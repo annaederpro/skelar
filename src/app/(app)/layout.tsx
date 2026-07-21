@@ -37,7 +37,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         .select("*")
         .eq("user_id", userId)
         .neq("status", "completed")
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(300),
     ]);
 
   return (

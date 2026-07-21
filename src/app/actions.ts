@@ -140,7 +140,10 @@ export async function toggleTaskComplete(
     return { error: "Сесія закінчилась, увійди ще раз." };
   }
 
-  const { error } = await supabase.from("tasks").update({ status: nextStatus }).eq("id", taskId);
+  const { error } = await supabase
+    .from("tasks")
+    .update(nextStatus === "completed" ? { status: nextStatus, is_seeded: false } : { status: nextStatus })
+    .eq("id", taskId);
 
   if (error) {
     return { error: "Не вдалося оновити задачу." };
