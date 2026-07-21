@@ -167,3 +167,13 @@
     font-family: var(--font-heading), serif;
   }
 }
+/* iOS Safari auto-zooms the page when a focused form control's font-size is
+   under 16px — and frequently stays zoomed after blur. Keeping controls at
+   16px on touch devices prevents the zoom from ever triggering. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
