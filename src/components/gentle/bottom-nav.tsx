@@ -10,10 +10,10 @@ interface BottomNavProps {
 }
 
 const TABS = [
-  { href: "/inbox", label: "Вхідні", icon: Inbox },
   { href: "/today", label: "Сьогодні", icon: CalendarCheck },
   { href: "/upcoming", label: "Незабаром", icon: CalendarDays },
-  { href: "/aquarium", label: "Акваріум", icon: Fish },
+  { href: "/inbox", label: "Всі задачі", icon: Inbox },
+  { href: "/aquarium", label: "Мій акваріум", icon: Fish },
 ] as const;
 
 export function BottomNav({ todayCount }: BottomNavProps) {
