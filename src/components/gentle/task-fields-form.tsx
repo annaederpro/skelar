@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarDays } from "lucide-react";
+import { useState } from "react";
+import { CalendarDays, Clock, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
 import {
@@ -28,6 +29,8 @@ interface TaskFieldsFormProps {
   onProjectIdChange: (value: string | null) => void;
   dueDate: string;
   onDueDateChange: (value: string) => void;
+  dueTime: string;
+  onDueTimeChange: (value: string) => void;
   projects: DbProject[];
 }
 
@@ -53,9 +56,13 @@ export function TaskFieldsForm({
   onProjectIdChange,
   dueDate,
   onDueDateChange,
+  dueTime,
+  onDueTimeChange,
   projects,
 }: TaskFieldsFormProps) {
   const activeBucket = priorityBucket(priority);
+  // Time input starts revealed only when the task already has a time.
+  const [isTimeExpanded, setIsTimeExpanded] = useState(dueTime !== "");
 
   return (
     <>
@@ -165,13 +172,58 @@ export function TaskFieldsForm({
             <input
               type="date"
               value={dueDate}
-              onChange={(e) => onDueDateChange(e.target.value)}
+              onChange={(e) => {
+                onDueDateChange(e.target.value);
+                if (!e.target.value) {
+                  onDueTimeChange("");
+                  setIsTimeExpanded(false);
+                }
+              }}
               aria-label="Дата виконання"
               className="h-9 w-[140px] rounded-md border border-line bg-transparent py-2 pl-8 pr-2 text-sm text-ink-soft"
             />
           </div>
         </div>
       </div>
+
+      {/* optional time-of-day — only offered once a date exists */}
+      {dueDate !== "" && (
+        <div className="flex items-center justify-end">
+          {isTimeExpanded ? (
+            <div className="flex items-center gap-1">
+              <div className="relative">
+                <Clock className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ink-soft" />
+                <input
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => onDueTimeChange(e.target.value)}
+                  aria-label="Час виконання"
+                  className="h-9 w-[120px] rounded-md border border-line bg-transparent py-2 pl-8 pr-2 text-sm text-ink-soft"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onDueTimeChange("");
+                  setIsTimeExpanded(false);
+                }}
+                aria-label="Прибрати час"
+                className="flex size-7 items-center justify-center rounded-full text-ink-soft hover:bg-muted"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsTimeExpanded(true)}
+              className="rounded-full border border-line bg-card px-3 py-1.5 text-xs font-bold text-ink-soft transition-colors hover:border-sea"
+            >
+              + час
+            </button>
+          )}
+        </div>
+      )}
     </>
   );
 }

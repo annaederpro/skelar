@@ -5,6 +5,7 @@ import type { DbTask, EnergyLevel } from "@/types/gentle";
 import {
   EFFORT_WORD,
   formatDuration,
+  formatDueTime,
   priorityBucket,
   PRIORITY_BUCKET_LABEL,
   PRIORITY_BUCKET_PILL_CLASS,
@@ -134,6 +135,7 @@ export function TaskCard({ task, projectName, onToggleComplete, onEdit }: TaskCa
             >
               <CalendarDays className="size-3.5" />
               {formatDueDate(task.due_date)}
+              {task.due_time ? ` · ${formatDueTime(task.due_time)}` : null}
             </span>
           )}
           {projectName && (

@@ -9,6 +9,7 @@ const parsedTaskSchema = z.object({
   title: z.string().min(1),
   priority: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).nullable(),
   due_date: z.string().nullable(),
+  due_time: z.string().nullable(),
   energy_level: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable(),
   duration_minutes: z.number().int().positive().nullable(),
   project_id: z.string().nullable(),
@@ -18,6 +19,7 @@ export type ParsedTask = {
   title: string;
   priority: 1 | 2 | 3 | 4 | null;
   dueDate: string | null;
+  dueTime: string | null;
   energyLevel: 1 | 2 | 3 | null;
   durationMinutes: number | null;
   projectId: string | null;
@@ -39,6 +41,10 @@ const RESPONSE_JSON_SCHEMA = {
           type: ["string", "null"],
           description: "ISO date YYYY-MM-DD, or null if no date was mentioned",
         },
+        due_time: {
+          type: ["string", "null"],
+          description: "24-hour HH:MM, or null if no time of day was mentioned",
+        },
         energy_level: { type: ["integer", "null"], enum: [1, 2, 3, null] },
         duration_minutes: { type: ["integer", "null"] },
         project_id: { type: ["string", "null"] },
@@ -47,6 +53,7 @@ const RESPONSE_JSON_SCHEMA = {
         "title",
         "priority",
         "due_date",
+        "due_time",
         "energy_level",
         "duration_minutes",
         "project_id",
@@ -68,12 +75,14 @@ function buildSystemPrompt(projects: OpenRouterProject[], todayIso: string): str
     "- title: коротка назва задачі (обов'язково, не порожня).",
     "- priority: 1 (дуже важливо), 2 або 3 (звичайне), 4 (колись/неважливо), або null якщо незрозуміло.",
     "- due_date: ISO-дата YYYY-MM-DD, або null якщо дата не згадана.",
+    "- due_time: час доби у 24-годинному форматі HH:MM ('о 15:00' → '15:00'), або null якщо час не згадано. Ніколи не вигадуй час.",
+    "- Якщо згадано час, але не дату — постав due_date на сьогодні.",
     "- energy_level: 1 (легка задача), 2 (середня), 3 (потребує глибокого фокусу), або null якщо незрозуміло.",
     "- duration_minutes: орієнтовна тривалість у хвилинах, або null якщо не згадано.",
     "- project_id: id одного з проєктів користувача, ЯКЩО текст явно згадує його назву. Інакше null.",
     "Доступні проєкти користувача:",
     projectList,
-    "Завжди повертай усі шість полів. Якщо щось невідомо — null, не вигадуй значення.",
+    "Завжди повертай усі сім полів. Якщо щось невідомо — null, не вигадуй значення.",
   ].join("\n");
 }
 
@@ -131,11 +140,18 @@ export async function parseTaskWithOpenRouter(
         ? result.data.project_id
         : null;
 
+    // A malformed time degrades to null rather than failing the whole parse;
+    // a time without a date gets today's date (mirrors the prompt rule).
+    const rawTime = result.data.due_time;
+    const dueTime =
+      rawTime && /^\d{2}:\d{2}(:\d{2})?$/.test(rawTime) ? rawTime.slice(0, 5) : null;
+
     return {
       ok: true,
       title: result.data.title,
       priority: result.data.priority,
-      dueDate: result.data.due_date,
+      dueDate: result.data.due_date ?? (dueTime ? todayIso : null),
+      dueTime,
       energyLevel: result.data.energy_level,
       durationMinutes: result.data.duration_minutes,
       projectId,

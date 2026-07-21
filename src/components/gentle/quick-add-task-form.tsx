@@ -18,6 +18,7 @@ interface QuickAddTaskFormProps {
     projectId: string | null;
     priority: Priority;
     dueDate: string | null;
+    dueTime: string | null;
   }) => void;
   onParseWithAI: (rawText: string) => Promise<ParseTaskResult>;
   disabledEnergyLevels?: EnergyLevel[];
@@ -45,6 +46,7 @@ export function QuickAddTaskForm({
   const [projectId, setProjectId] = useState<string | null>(null);
   const [priority, setPriority] = useState<Priority>(4);
   const [dueDate, setDueDate] = useState("");
+  const [dueTime, setDueTime] = useState("");
 
   const setDurationFromMinutes = (minutes: number) => {
     const { value, unit } = splitMinutesToDuration(minutes);
@@ -79,6 +81,7 @@ export function QuickAddTaskForm({
       setDurationFromMinutes(result.durationMinutes ?? 30);
       setProjectId(result.projectId);
       setDueDate(result.dueDate ?? "");
+      setDueTime(result.dueTime ?? "");
       setAiNotice(null);
     } else {
       setTitle(result.rawText);
@@ -87,6 +90,7 @@ export function QuickAddTaskForm({
       setDurationFromMinutes(30);
       setProjectId(null);
       setDueDate("");
+      setDueTime("");
       setAiNotice("AI-розбір не спрацював — перевір поля перед створенням.");
     }
     setStep("review");
@@ -137,6 +141,7 @@ export function QuickAddTaskForm({
     setProjectId(null);
     setPriority(4);
     setDueDate("");
+    setDueTime("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -151,6 +156,7 @@ export function QuickAddTaskForm({
       projectId,
       priority,
       dueDate: dueDate || null,
+      dueTime: dueTime || null,
     });
     resetAll();
   };
@@ -242,6 +248,8 @@ export function QuickAddTaskForm({
         onProjectIdChange={setProjectId}
         dueDate={dueDate}
         onDueDateChange={setDueDate}
+        dueTime={dueTime}
+        onDueTimeChange={setDueTime}
         projects={projects}
       />
 

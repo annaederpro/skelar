@@ -84,6 +84,7 @@ export async function addTask(input: {
   projectId?: string | null;
   priority?: Priority;
   dueDate?: string | null;
+  dueTime?: string | null;
 }): Promise<{ task: DbTask } | { error: string }> {
   const supabase = await createClient();
   const {
@@ -117,6 +118,7 @@ export async function addTask(input: {
       project_id: input.projectId ?? null,
       priority: input.priority ?? 4,
       due_date: input.dueDate ?? null,
+      due_time: input.dueDate ? (input.dueTime ?? null) : null,
     })
     .select()
     .single();
@@ -137,6 +139,7 @@ export async function updateTask(
     projectId: string | null;
     priority: Priority;
     dueDate: string | null;
+    dueTime: string | null;
   },
 ): Promise<{ ok: true } | { error: string }> {
   const supabase = await createClient();
@@ -170,6 +173,7 @@ export async function updateTask(
       project_id: input.projectId,
       priority: input.priority,
       due_date: input.dueDate,
+      due_time: input.dueDate ? input.dueTime : null,
     })
     .eq("id", taskId);
 

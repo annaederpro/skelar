@@ -15,7 +15,8 @@ export default async function UpcomingPage() {
     .eq("user_id", userId)
     .not("due_date", "is", null)
     .neq("status", "completed")
-    .order("due_date", { ascending: true });
+    .order("due_date", { ascending: true })
+    .order("due_time", { ascending: true, nullsFirst: true });
 
   return (
     <UpcomingView initialTasks={(tasks ?? []) as DbTask[]} emptyMessage="Немає запланованих задач 🌿" />

@@ -31,6 +31,11 @@ export default async function InboxPage() {
     if (a.due_date !== null && b.due_date !== null && a.due_date !== b.due_date) {
       return a.due_date < b.due_date ? -1 : 1;
     }
+    if (a.due_time !== b.due_time) {
+      if (a.due_time === null) return -1;
+      if (b.due_time === null) return 1;
+      return a.due_time < b.due_time ? -1 : 1;
+    }
     return 0;
   });
 

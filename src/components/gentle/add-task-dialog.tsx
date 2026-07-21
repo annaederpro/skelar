@@ -45,6 +45,7 @@ export function AddTaskDialog({
     projectId: string | null;
     priority: Priority;
     dueDate: string | null;
+    dueTime: string | null;
   }) => {
     setErrorMessage(null);
     const result = await addTask(input);

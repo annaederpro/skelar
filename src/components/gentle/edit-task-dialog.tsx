@@ -8,6 +8,7 @@ import { updateTask } from "@/app/actions";
 import {
   splitMinutesToDuration,
   parseDurationMinutes,
+  formatDueTime,
   type DurationUnit,
   type DbProject,
   type DbTask,
@@ -35,6 +36,7 @@ export function EditTaskDialog({ task, projects, onOpenChange, onSaved }: EditTa
   const [projectId, setProjectId] = useState<string | null>(task?.project_id ?? null);
   const [priority, setPriority] = useState<Priority>(task?.priority ?? 4);
   const [dueDate, setDueDate] = useState(task?.due_date ?? "");
+  const [dueTime, setDueTime] = useState(task?.due_time ? formatDueTime(task.due_time) : "");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -53,6 +55,7 @@ export function EditTaskDialog({ task, projects, onOpenChange, onSaved }: EditTa
       projectId,
       priority,
       dueDate: dueDate || null,
+      dueTime: dueTime || null,
     });
     setIsSaving(false);
 
@@ -91,6 +94,8 @@ export function EditTaskDialog({ task, projects, onOpenChange, onSaved }: EditTa
               onProjectIdChange={setProjectId}
               dueDate={dueDate}
               onDueDateChange={setDueDate}
+              dueTime={dueTime}
+              onDueTimeChange={setDueTime}
               projects={projects}
             />
             <Button
