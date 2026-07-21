@@ -33,6 +33,8 @@ export interface DbTask {
   project_id: string | null;
   priority: Priority;
   due_date: string | null;
+  // "HH:MM:SS" from Postgres `time` (migration 0004). Never set without due_date.
+  due_time: string | null;
   // Added by migration 0003 (Phase 2 — Focus). Absent/false until then.
   is_seeded: boolean;
 }
@@ -43,6 +45,12 @@ export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   return rest === 0 ? `${hours} год` : `${hours} год ${rest} хв`;
+}
+
+// Postgres `time` reads back as "HH:MM:SS"; the UI (cards and
+// <input type="time">) wants "HH:MM".
+export function formatDueTime(time: string): string {
+  return time.slice(0, 5);
 }
 
 // Duration is edited as a raw string + unit ("30" + "хв" or "2" + "год") so
