@@ -197,6 +197,20 @@ export function QuickAddTaskForm({
           </p>
         )}
         <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            className="h-9 flex-1 rounded-full"
+            disabled={isParsing || isListening}
+            onClick={() => void runParse(aiTextRef.current)}
+          >
+            {isParsing ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="size-3.5" />
+            )}
+            {isParsing ? "Розбираю..." : "Створити"}
+          </Button>
           {isMicSupported && (
             <Button
               type="button"
@@ -217,20 +231,6 @@ export function QuickAddTaskForm({
               <Mic className="size-4" />
             </Button>
           )}
-          <Button
-            type="button"
-            size="sm"
-            className="h-9 flex-1 rounded-full"
-            disabled={isParsing || isListening}
-            onClick={() => void runParse(aiTextRef.current)}
-          >
-            {isParsing ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="size-3.5" />
-            )}
-            {isParsing ? "Розбираю..." : "Створити"}
-          </Button>
         </div>
       </div>
     );
