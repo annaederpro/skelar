@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { ResourceStatusProvider, useResourceStatus } from "@/context/resource-status-context";
 import { ProjectsProvider } from "@/context/projects-context";
@@ -15,6 +16,9 @@ import type { DbProject, DbTask, ResourceStatus } from "@/types/gentle";
 
 function AppHeader({ openTasks }: { openTasks: DbTask[] }) {
   const { resourceStatus, setResourceStatus, isDepleted } = useResourceStatus();
+  const pathname = usePathname();
+  // The Focus card lives only on Сьогодні — the other tabs stay lighter.
+  const showFocus = pathname === "/today" || pathname.startsWith("/today/");
 
   return (
     <header className="flex flex-col gap-4 px-4 pt-6">
@@ -32,7 +36,7 @@ function AppHeader({ openTasks }: { openTasks: DbTask[] }) {
       </div>
       <p className="text-[15px] text-ink-soft">Скільки в тебе енергії зараз?</p>
       <ResourceStatusToggle value={resourceStatus} onChange={setResourceStatus} />
-      <FocusCard tasks={openTasks} />
+      {showFocus && <FocusCard tasks={openTasks} />}
       {isDepleted && <DepletedBanner />}
     </header>
   );
