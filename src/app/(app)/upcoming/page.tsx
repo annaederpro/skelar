@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { getAppToday } from "@/lib/date";
 import { UpcomingView } from "@/components/gentle/upcoming-view";
 import type { DbTask } from "@/types/gentle";
 
@@ -10,13 +9,12 @@ export default async function UpcomingPage() {
   } = await supabase.auth.getUser();
   const userId = user!.id;
 
-  const today = getAppToday();
-
   const { data: tasks } = await supabase
     .from("tasks")
     .select("*")
     .eq("user_id", userId)
-    .gt("due_date", today)
+    .not("due_date", "is", null)
+    .neq("status", "completed")
     .order("due_date", { ascending: true });
 
   return (

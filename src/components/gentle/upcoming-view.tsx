@@ -8,6 +8,7 @@ import { ProjectFilterBar, type ProjectFilter } from "@/components/gentle/projec
 import { toggleTaskComplete, createProject } from "@/app/actions";
 import { useProjects } from "@/context/projects-context";
 import { getAppToday } from "@/lib/date";
+import { formatDayHeader } from "@/lib/upcoming-date";
 import type { DbTask } from "@/types/gentle";
 
 interface UpcomingViewProps {
@@ -51,6 +52,22 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
     }
     return set;
   }, [visibleTasks]);
+
+  const overdueTasks = useMemo(
+    () => visibleTasks.filter((t) => t.due_date !== null && t.due_date < today),
+    [visibleTasks, today],
+  );
+
+  const groupedUpcoming = useMemo(() => {
+    const map = new Map<string, DbTask[]>();
+    for (const task of visibleTasks) {
+      if (task.due_date === null || task.due_date <= today) continue;
+      const group = map.get(task.due_date) ?? [];
+      group.push(task);
+      map.set(task.due_date, group);
+    }
+    return map; // insertion order matches ascending due_date since visibleTasks is pre-sorted by the query
+  }, [visibleTasks, today]);
 
   const handleSelectDate = (date: string) => {
     if (date < today) {
@@ -111,13 +128,37 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
           {errorMessage}
         </p>
       )}
-      <div ref={listTopRef} />
-      <TaskList
-        tasks={visibleTasks}
-        projectNameById={projectNameById}
-        onToggleComplete={handleToggleComplete}
-        emptyMessage={emptyMessage}
-      />
+      {overdueTasks.length === 0 && groupedUpcoming.size === 0 ? (
+        <p className="rounded-2xl bg-muted/60 px-4 py-6 text-center text-sm text-muted-foreground">
+          {emptyMessage}
+        </p>
+      ) : (
+        <>
+          {overdueTasks.length > 0 && (
+            <section id="overdue-section" className="flex flex-col gap-2">
+              <h2 className="px-1 text-[13px] font-bold text-coral">Прострочено</h2>
+              <TaskList
+                tasks={overdueTasks}
+                projectNameById={projectNameById}
+                onToggleComplete={handleToggleComplete}
+              />
+            </section>
+          )}
+          <div ref={listTopRef} />
+          {Array.from(groupedUpcoming.entries()).map(([date, dayTasks]) => (
+            <section key={date} id={`day-${date}`} className="flex flex-col gap-2">
+              <h2 className="px-1 text-[13px] font-bold text-ink-soft">
+                {formatDayHeader(date, today)}
+              </h2>
+              <TaskList
+                tasks={dayTasks}
+                projectNameById={projectNameById}
+                onToggleComplete={handleToggleComplete}
+              />
+            </section>
+          ))}
+        </>
+      )}
     </div>
   );
 }
