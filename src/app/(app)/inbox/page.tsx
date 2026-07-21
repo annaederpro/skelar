@@ -35,6 +35,6 @@ export default async function InboxPage() {
   });
 
   return (
-    <TaskView initialTasks={sortedTasks as DbTask[]} emptyMessage="Inbox порожній. Гарний знак 🌿" />
+    <TaskView initialTasks={sortedTasks as DbTask[]} emptyMessage="Всі задачі порожні. Гарний знак 🌿" />
   );
 }

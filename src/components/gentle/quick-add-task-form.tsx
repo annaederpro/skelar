@@ -338,9 +338,9 @@ export function QuickAddTaskForm({
           value={projectId ?? ""}
           onChange={(e) => setProjectId(e.target.value || null)}
           aria-label="Проєкт"
-          className="h-9 flex-1 rounded-md border border-line bg-transparent px-3 text-sm"
+          className="h-9 min-w-0 flex-1 rounded-md border border-line bg-transparent px-3 text-sm"
         >
-          <option value="">Inbox</option>
+          <option value="">Всі задачі</option>
           {projects.map((project) => (
             <option key={project.id} value={project.id}>
               {project.name}
@@ -353,7 +353,7 @@ export function QuickAddTaskForm({
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
           aria-label="Дата виконання"
-          className="h-9 rounded-md border border-line bg-transparent px-3 text-sm text-ink-soft"
+          className="h-9 w-[132px] shrink-0 rounded-md border border-line bg-transparent px-2 text-sm text-ink-soft"
         />
       </div>
 
