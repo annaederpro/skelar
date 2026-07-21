@@ -16,7 +16,7 @@ export function Fab({ projects }: FabProps) {
     <AddTaskDialog
       projects={projects}
       disabledEnergyLevels={isDepleted ? [3] : []}
-      triggerClassName="fixed bottom-20 right-4 z-40 flex size-14 items-center justify-center rounded-full bg-rose-400 text-white shadow-lg transition-colors hover:bg-rose-500"
+      triggerClassName="fixed bottom-20 right-4 z-40 flex size-14 items-center justify-center rounded-full bg-sea text-white shadow-lg transition-colors hover:bg-sea-deep"
     >
       <Plus className="size-6" aria-hidden />
       <span className="sr-only">Нова задача</span>

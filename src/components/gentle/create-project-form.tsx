@@ -39,7 +39,7 @@ export function CreateProjectForm() {
           <Plus className="size-4" />
         </Button>
       </div>
-      {errorMessage && <p className="text-sm text-rose-600">{errorMessage}</p>}
+      {errorMessage && <p className="text-sm text-coral">{errorMessage}</p>}
     </form>
   );
 }

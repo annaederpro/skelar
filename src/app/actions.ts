@@ -173,6 +173,51 @@ export async function updateResourceStatus(
   return { ok: true };
 }
 
+export async function finishFocusSession(
+  taskId: string,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({ status: "completed", is_seeded: false })
+    .eq("id", taskId);
+
+  if (error) {
+    return { error: "Не вдалося завершити задачу." };
+  }
+
+  return { ok: true };
+}
+
+export async function leaveFocusSession(
+  taskId: string,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const { error } = await supabase.from("tasks").update({ is_seeded: true }).eq("id", taskId);
+
+  if (error) {
+    return { error: "Не вдалося зберегти прогрес." };
+  }
+
+  return { ok: true };
+}
+
 export async function createProject(
   name: string,
 ): Promise<{ project: DbProject } | { error: string }> {

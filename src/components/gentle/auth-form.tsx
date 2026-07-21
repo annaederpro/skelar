@@ -32,8 +32,8 @@ export function AuthForm() {
           />
         </div>
 
-        {state.error && <p className="text-sm text-rose-600">{state.error}</p>}
-        {state.message && <p className="text-sm text-emerald-600">{state.message}</p>}
+        {state.error && <p className="text-sm text-coral">{state.error}</p>}
+        {state.message && <p className="text-sm text-sea-deep">{state.message}</p>}
 
         <Button type="submit" disabled={isPending} className="rounded-full">
           {mode === "signin" ? "Увійти" : "Зареєструватися"}

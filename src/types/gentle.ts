@@ -33,42 +33,56 @@ export interface DbTask {
   project_id: string | null;
   priority: Priority;
   due_date: string | null;
+  // Added by migration 0003 (Phase 2 — Focus). Absent/false until then.
+  is_seeded: boolean;
 }
 
-export const ENERGY_LABEL: Record<EnergyLevel, string> = {
-  1: "⚡️ Легка",
-  2: "⚡️⚡️ Середня",
-  3: "⚡️⚡️⚡️ Важка",
-};
-
-export const ENERGY_DOT_CLASS: Record<EnergyLevel, string> = {
-  1: "bg-emerald-400",
-  2: "bg-amber-400",
-  3: "bg-rose-400",
-};
-
-export const ENERGY_BADGE_CLASS: Record<EnergyLevel, string> = {
-  1: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  2: "bg-amber-100 text-amber-700 border-amber-200",
-  3: "bg-rose-100 text-rose-700 border-rose-200",
+// coralQ effort words (energy_level rendered as "effort" on task cards)
+export const EFFORT_WORD: Record<EnergyLevel, string> = {
+  1: "легка",
+  2: "середня",
+  3: "глибока",
 };
 
 export const RESOURCE_STATUS_LABEL: Record<ResourceStatus, string> = {
-  depleted: "Виснажена",
+  depleted: "Мало сил",
   normal: "В нормі",
-  high: "Повна сил",
+  high: "Повний заряд",
 };
 
-export const PRIORITY_LABEL: Record<Priority, string> = {
-  1: "P1",
-  2: "P2",
-  3: "P3",
-  4: "P4",
+// ── Priority: stored as 1–4 in the DB, presented as 3 human buckets in coralQ ──
+export type PriorityBucket = "high" | "mid" | "low";
+
+// DB value 1 → high, 2–3 → mid, 4 → low
+export function priorityBucket(priority: Priority): PriorityBucket {
+  if (priority === 1) return "high";
+  if (priority === 4) return "low";
+  return "mid";
+}
+
+// The three pickable buckets, in display order, with the DB value each writes back.
+export const PRIORITY_BUCKETS: { bucket: PriorityBucket; value: Priority }[] = [
+  { bucket: "high", value: 1 },
+  { bucket: "mid", value: 2 },
+  { bucket: "low", value: 4 },
+];
+
+export const PRIORITY_BUCKET_LABEL: Record<PriorityBucket, string> = {
+  high: "Важливо",
+  mid: "Звичайне",
+  low: "Колись",
 };
 
-export const PRIORITY_DOT_CLASS: Record<Priority, string> = {
-  1: "bg-rose-400",
-  2: "bg-orange-400",
-  3: "bg-sky-400",
-  4: "bg-muted-foreground/40",
+// pill styling (soft ocean tokens, no hard red)
+export const PRIORITY_BUCKET_PILL_CLASS: Record<PriorityBucket, string> = {
+  high: "bg-coral-soft text-coral",
+  mid: "bg-muted text-ink-soft",
+  low: "bg-sea-soft text-sea-deep",
+};
+
+// left card accent bar
+export const PRIORITY_BUCKET_BAR_CLASS: Record<PriorityBucket, string> = {
+  high: "bg-coral",
+  mid: "bg-transparent",
+  low: "bg-transparent",
 };

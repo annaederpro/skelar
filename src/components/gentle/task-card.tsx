@@ -1,10 +1,14 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Clock, Check } from "lucide-react";
-import type { DbTask } from "@/types/gentle";
-import { ENERGY_BADGE_CLASS, ENERGY_DOT_CLASS } from "@/types/gentle";
+import type { DbTask, EnergyLevel } from "@/types/gentle";
+import {
+  EFFORT_WORD,
+  priorityBucket,
+  PRIORITY_BUCKET_LABEL,
+  PRIORITY_BUCKET_PILL_CLASS,
+  PRIORITY_BUCKET_BAR_CLASS,
+} from "@/types/gentle";
 import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
@@ -12,20 +16,42 @@ interface TaskCardProps {
   onToggleComplete?: (task: DbTask) => void;
 }
 
+function EffortDots({ level }: { level: EnergyLevel }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="flex items-center gap-[3px]">
+        {[1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={cn(
+              "size-[7px] rounded-full",
+              i <= level ? "bg-sea" : "bg-line",
+            )}
+          />
+        ))}
+      </span>
+      {EFFORT_WORD[level]}
+    </span>
+  );
+}
+
 export function TaskCard({ task, onToggleComplete }: TaskCardProps) {
   const isCompleted = task.status === "completed";
+  const bucket = priorityBucket(task.priority);
+  const isSeeded = task.is_seeded && !isCompleted;
 
   return (
-    <Card
+    <div
       className={cn(
-        "flex flex-row items-center gap-3 rounded-2xl border-none p-3 shadow-sm transition-opacity",
-        isCompleted && "opacity-50",
+        "relative flex items-center gap-3 overflow-hidden rounded-[20px] border border-line bg-card p-[14px_15px] shadow-sm transition-all",
+        isCompleted && "bg-paper/60",
       )}
     >
+      {/* left accent bar: coral for high priority, sea for a seeded task */}
       <span
         className={cn(
-          "size-2.5 shrink-0 rounded-full",
-          ENERGY_DOT_CLASS[task.energy_level],
+          "absolute inset-y-0 left-0 w-1",
+          isSeeded ? "bg-sea" : PRIORITY_BUCKET_BAR_CLASS[bucket],
         )}
         aria-hidden
       />
@@ -34,37 +60,52 @@ export function TaskCard({ task, onToggleComplete }: TaskCardProps) {
         type="button"
         onClick={() => onToggleComplete?.(task)}
         className={cn(
-          "flex size-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+          "flex size-[26px] shrink-0 items-center justify-center rounded-full border-2 transition-colors",
           isCompleted
-            ? "border-emerald-400 bg-emerald-400 text-white"
-            : "border-muted-foreground/30 text-transparent hover:border-emerald-400",
+            ? "border-sea bg-sea text-white"
+            : "border-ink-soft/30 text-transparent hover:border-sea",
         )}
         aria-label={isCompleted ? "Позначити як невиконану" : "Позначити як виконану"}
       >
-        <Check className="size-4" />
+        <Check className="size-[14px]" strokeWidth={3.5} />
       </button>
 
       <div className="min-w-0 flex-1">
-        <p
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              "text-[15px] font-semibold leading-tight",
+              isCompleted && "text-ink-soft line-through decoration-line",
+            )}
+          >
+            {task.title}
+          </span>
+          <span
+            className={cn(
+              "rounded-full px-[9px] py-[3px] text-[10.5px] font-extrabold",
+              PRIORITY_BUCKET_PILL_CLASS[bucket],
+              isCompleted && "opacity-50",
+            )}
+          >
+            {PRIORITY_BUCKET_LABEL[bucket]}
+          </span>
+        </div>
+        <div
           className={cn(
-            "truncate text-sm font-medium",
-            isCompleted && "line-through",
+            "mt-1.5 flex flex-wrap items-center gap-3 text-[12.5px] text-ink-soft",
+            isCompleted && "opacity-50",
           )}
         >
-          {task.title}
-        </p>
-        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-          <Clock className="size-3.5" />
-          <span>{task.duration_minutes} хв</span>
+          <span className="flex items-center gap-[5px]">
+            <Clock className="size-3.5" />
+            {task.duration_minutes} хв
+          </span>
+          <EffortDots level={task.energy_level} />
+          {isSeeded && (
+            <span className="font-bold text-sea-deep">🥚 ікринка</span>
+          )}
         </div>
       </div>
-
-      <Badge
-        variant="outline"
-        className={cn("shrink-0 rounded-full", ENERGY_BADGE_CLASS[task.energy_level])}
-      >
-        {"⚡️".repeat(task.energy_level)}
-      </Badge>
-    </Card>
+    </div>
   );
 }

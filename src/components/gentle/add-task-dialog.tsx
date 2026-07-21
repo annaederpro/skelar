@@ -64,7 +64,7 @@ export function AddTaskDialog({
           <DialogTitle>Нова задача</DialogTitle>
         </DialogHeader>
         {errorMessage && (
-          <p className="rounded-xl bg-rose-50 px-3 py-2 text-center text-sm text-rose-700">
+          <p className="rounded-xl bg-coral-soft/60 px-3 py-2 text-center text-sm text-coral">
             {errorMessage}
           </p>
         )}

@@ -38,7 +38,7 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   return (
     <div className="flex flex-col gap-2">
       {errorMessage && (
-        <p className="rounded-xl bg-rose-50 px-3 py-2 text-center text-sm text-rose-700">
+        <p className="rounded-xl bg-coral-soft/60 px-3 py-2 text-center text-sm text-coral">
           {errorMessage}
         </p>
       )}

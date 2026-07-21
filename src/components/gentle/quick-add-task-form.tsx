@@ -5,7 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
-import { ENERGY_DOT_CLASS, PRIORITY_DOT_CLASS, PRIORITY_LABEL } from "@/types/gentle";
+import {
+  EFFORT_WORD,
+  priorityBucket,
+  PRIORITY_BUCKETS,
+  PRIORITY_BUCKET_LABEL,
+} from "@/types/gentle";
 import { cn } from "@/lib/utils";
 
 interface QuickAddTaskFormProps {
@@ -22,7 +27,6 @@ interface QuickAddTaskFormProps {
 }
 
 const ENERGY_OPTIONS: EnergyLevel[] = [1, 2, 3];
-const PRIORITY_OPTIONS: Priority[] = [1, 2, 3, 4];
 
 export function QuickAddTaskForm({
   onAdd,
@@ -57,8 +61,13 @@ export function QuickAddTaskForm({
     setDueDate("");
   };
 
+  const activeBucket = priorityBucket(priority);
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-2xl border bg-card p-3">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-3 rounded-[20px] border border-line bg-card p-3"
+    >
       <Input
         placeholder="Що потрібно зробити?"
         value={title}
@@ -66,6 +75,7 @@ export function QuickAddTaskForm({
         autoFocus
       />
 
+      {/* effort (energy) */}
       <div className="flex items-center gap-1.5">
         {ENERGY_OPTIONS.map((level) => {
           const isDisabled = disabledEnergyLevels.includes(level);
@@ -77,14 +87,20 @@ export function QuickAddTaskForm({
               onClick={() => setEnergyLevel(level)}
               className={cn(
                 "flex size-8 items-center justify-center rounded-full border-2 transition-colors disabled:cursor-not-allowed disabled:opacity-30",
-                energyLevel === level ? "border-foreground" : "border-transparent",
+                energyLevel === level ? "border-sea" : "border-transparent",
               )}
-              aria-label={`Рівень енергії ${level}`}
+              aria-label={`Зусилля: ${EFFORT_WORD[level]}`}
             >
-              <span className={cn("size-3 rounded-full", ENERGY_DOT_CLASS[level])} />
+              <span
+                className={cn(
+                  "size-3 rounded-full",
+                  level <= energyLevel ? "bg-sea" : "bg-line",
+                )}
+              />
             </button>
           );
         })}
+        <span className="text-xs text-ink-soft">{EFFORT_WORD[energyLevel]}</span>
 
         <Input
           type="number"
@@ -94,25 +110,28 @@ export function QuickAddTaskForm({
           onChange={(e) => setDuration(Number(e.target.value) || 0)}
           className="ml-2 w-20"
         />
-        <span className="text-xs text-muted-foreground">хв</span>
+        <span className="text-xs text-ink-soft">хв</span>
       </div>
 
-      <div className="flex items-center gap-1.5">
-        {PRIORITY_OPTIONS.map((level) => (
+      {/* priority — 3 human buckets */}
+      <div className="flex items-center gap-2">
+        {PRIORITY_BUCKETS.map(({ bucket, value }) => (
           <button
-            key={level}
+            key={bucket}
             type="button"
-            onClick={() => setPriority(level)}
+            onClick={() => setPriority(value)}
             className={cn(
-              "flex size-8 items-center justify-center rounded-full border-2 transition-colors",
-              priority === level ? "border-foreground" : "border-transparent",
+              "rounded-full border px-3 py-1.5 text-xs font-bold transition-colors",
+              activeBucket === bucket
+                ? "border-sea bg-sea-soft text-sea-deep"
+                : "border-line bg-card text-ink-soft",
             )}
-            aria-label={`Пріоритет ${PRIORITY_LABEL[level]}`}
+            aria-label={`Пріоритет: ${PRIORITY_BUCKET_LABEL[bucket]}`}
+            aria-pressed={activeBucket === bucket}
           >
-            <span className={cn("size-3 rounded-full", PRIORITY_DOT_CLASS[level])} />
+            {PRIORITY_BUCKET_LABEL[bucket]}
           </button>
         ))}
-        <span className="text-xs text-muted-foreground">{PRIORITY_LABEL[priority]}</span>
       </div>
 
       <div className="flex items-center gap-2">
@@ -120,7 +139,7 @@ export function QuickAddTaskForm({
           value={projectId ?? ""}
           onChange={(e) => setProjectId(e.target.value || null)}
           aria-label="Проєкт"
-          className="h-9 flex-1 rounded-md border bg-transparent px-3 text-sm"
+          className="h-9 flex-1 rounded-md border border-line bg-transparent px-3 text-sm"
         >
           <option value="">Inbox</option>
           {projects.map((project) => (
@@ -135,7 +154,7 @@ export function QuickAddTaskForm({
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
           aria-label="Дата виконання"
-          className="h-9 rounded-md border bg-transparent px-3 text-sm text-muted-foreground"
+          className="h-9 rounded-md border border-line bg-transparent px-3 text-sm text-ink-soft"
         />
       </div>
 
