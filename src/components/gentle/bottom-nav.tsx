@@ -28,8 +28,8 @@ export function BottomNav({ todayCount }: BottomNavProps) {
             key={href}
             href={href}
             className={cn(
-              "relative flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-[11.5px] font-bold transition-colors",
-              isActive ? "text-sea-deep" : "text-ink-soft hover:text-ink",
+              "relative flex flex-col items-center gap-1 rounded-2xl px-3 py-1.5 text-[11.5px] font-bold transition-colors",
+              isActive ? "bg-sea-soft text-sea-deep" : "text-ink-soft hover:text-ink",
             )}
           >
             <Icon className="size-5" />
