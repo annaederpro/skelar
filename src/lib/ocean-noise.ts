@@ -14,8 +14,10 @@ export function useOceanNoise() {
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const lfoRef = useRef<OscillatorNode | null>(null);
+  const wantsPlayingRef = useRef(false);
 
   const stop = () => {
+    wantsPlayingRef.current = false;
     sourceRef.current?.stop();
     sourceRef.current?.disconnect();
     lfoRef.current?.stop();
@@ -27,10 +29,18 @@ export function useOceanNoise() {
     setIsPlaying(false);
   };
 
-  const start = () => {
+  const start = async () => {
+    wantsPlayingRef.current = true;
     const ctx = ctxRef.current ?? new AudioContext();
     ctxRef.current = ctx;
-    if (ctx.state === "suspended") void ctx.resume();
+    setIsPlaying(true);
+
+    // Mobile/iOS browsers only unlock audio playback when resume() runs
+    // synchronously from a user gesture *and* the caller awaits it before
+    // starting any node — the previous fire-and-forget resume() left the
+    // context suspended and produced no sound on those browsers.
+    await ctx.resume();
+    if (!wantsPlayingRef.current) return; // toggled off again while resuming
 
     // 2 seconds of noise, looped — generated once and reused across toggles.
     if (!bufferRef.current) {
@@ -73,12 +83,11 @@ export function useOceanNoise() {
     sourceRef.current = source;
     gainRef.current = gain;
     lfoRef.current = lfo;
-    setIsPlaying(true);
   };
 
   const toggle = () => {
     if (isPlaying) stop();
-    else start();
+    else void start();
   };
 
   useEffect(() => {
