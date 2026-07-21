@@ -104,6 +104,7 @@ export type InsertTaskInput = {
   projectId?: string | null;
   priority?: Priority;
   dueDate?: string | null;
+  dueTime?: string | null;
 };
 
 /**
@@ -139,6 +140,7 @@ export async function insertTaskForUser(
       project_id: input.projectId ?? null,
       priority: input.priority ?? 4,
       due_date: input.dueDate ?? null,
+      due_time: input.dueDate ? (input.dueTime ?? null) : null,
     })
     .select()
     .single();
@@ -314,7 +316,13 @@ import { parseTaskForUser } from "@/lib/ai/parse-task-for-user";
 import { insertTaskForUser } from "@/lib/tasks/insert-task";
 import { transcribeVoice } from "@/lib/telegram/transcribe";
 import { getAppToday } from "@/lib/date";
-import { EFFORT_WORD, formatDuration, priorityBucket, type DbTask } from "@/types/gentle";
+import {
+  EFFORT_WORD,
+  formatDuration,
+  formatDueTime,
+  priorityBucket,
+  type DbTask,
+} from "@/types/gentle";
 
 // Whisper caps uploads at 25MB; refuse slightly below that.
 const MAX_VOICE_BYTES = 24 * 1024 * 1024;
@@ -354,6 +362,9 @@ function buildConfirmation(task: DbTask): string {
       const [, month, day] = task.due_date.split("-");
       parts.push(`${day}.${month}`);
     }
+    if (task.due_time) {
+      parts.push(formatDueTime(task.due_time));
+    }
   }
   parts.push(formatDuration(task.duration_minutes));
   parts.push(EFFORT_WORD[task.energy_level]);
@@ -384,6 +395,7 @@ async function createTaskFromText(
     projectId: parsed.projectId,
     priority: parsed.priority ?? 4,
     dueDate: parsed.dueDate,
+    dueTime: parsed.dueTime,
   });
   if ("error" in result) {
     await ctx.api.sendMessage(chatId, MSG_GENERIC_FAILED);
