@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { LogOut } from "lucide-react";
 import { ResourceStatusProvider, useResourceStatus } from "@/context/resource-status-context";
+import { ProjectsProvider } from "@/context/projects-context";
 import { ResourceStatusToggle } from "@/components/gentle/resource-status-toggle";
 import { DepletedBanner } from "@/components/gentle/depleted-banner";
 import { BottomNav } from "@/components/gentle/bottom-nav";
@@ -54,12 +55,14 @@ export function AppShell({
 }: AppShellProps) {
   return (
     <ResourceStatusProvider initialResourceStatus={initialResourceStatus}>
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
-        <AppHeader openTasks={openTasks} />
-        <div className="flex-1 px-4 py-4">{children}</div>
-        <BottomNav todayCount={todayCount} />
-      </div>
-      <Fab projects={projects} />
+      <ProjectsProvider projects={projects}>
+        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+          <AppHeader openTasks={openTasks} />
+          <div className="flex-1 px-4 py-4">{children}</div>
+          <BottomNav todayCount={todayCount} />
+        </div>
+        <Fab projects={projects} />
+      </ProjectsProvider>
     </ResourceStatusProvider>
   );
 }

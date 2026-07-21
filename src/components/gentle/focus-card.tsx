@@ -7,6 +7,7 @@ import { FocusSessionModal } from "@/components/gentle/focus-session-modal";
 import { CelebrationModal, type CelebrationKind } from "@/components/gentle/celebration-modal";
 import { EFFORT_WORD, priorityBucket, PRIORITY_BUCKET_LABEL } from "@/types/gentle";
 import type { DbTask, ResourceStatus } from "@/types/gentle";
+import { getAppToday } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 interface FocusCardProps {
@@ -49,15 +50,49 @@ export function FocusCard({ tasks }: FocusCardProps) {
 
   const pool = useMemo(() => {
     if (selectedMin === null) return [];
+    const today = getAppToday();
+    // Due today or overdue outranks everything, then priority, then the
+    // nearest deadline, then the quickest task as a gentle tiebreaker.
+    const isUrgent = (t: DbTask) => (t.due_date !== null && t.due_date <= today ? 1 : 0);
     return tasks
       .filter((t) => t.energy_level <= energy && t.duration_minutes <= selectedMin)
       .sort((a, b) => {
-        const w = PRIORITY_WEIGHT[priorityBucket(b.priority)] - PRIORITY_WEIGHT[priorityBucket(a.priority)];
-        return w !== 0 ? w : a.duration_minutes - b.duration_minutes;
+        const urgency = isUrgent(b) - isUrgent(a);
+        if (urgency !== 0) return urgency;
+        const w =
+          PRIORITY_WEIGHT[priorityBucket(b.priority)] - PRIORITY_WEIGHT[priorityBucket(a.priority)];
+        if (w !== 0) return w;
+        if (a.due_date !== b.due_date) {
+          if (a.due_date === null) return 1;
+          if (b.due_date === null) return -1;
+          return a.due_date < b.due_date ? -1 : 1;
+        }
+        return a.duration_minutes - b.duration_minutes;
       });
   }, [tasks, selectedMin, energy]);
 
   const suggested = pool.length > 0 ? pool[poolIndex % pool.length] : null;
+
+  // Explain *why* this task was picked — deadline and priority first,
+  // falling back to the time/energy fit when nothing is urgent.
+  const suggestionReason = useMemo(() => {
+    if (!suggested) return "";
+    const today = getAppToday();
+    const parts: string[] = [];
+    if (suggested.due_date !== null && suggested.due_date < today) {
+      parts.push("🔥 Прострочено — варто взятись");
+    } else if (suggested.due_date === today) {
+      parts.push("🔥 Дедлайн сьогодні");
+    }
+    if (priorityBucket(suggested.priority) === "high") {
+      parts.push("Важливо");
+    }
+    if (parts.length > 0) {
+      return `${parts.join(" · ")} · впишеться у твій час`;
+    }
+    const timeWord = selectedMin === 999 ? "вільний час" : `${selectedMin} хв`;
+    return `✦ Підходить під «${ENERGY_WORD[energy]}» і ${timeWord}, що в тебе є`;
+  }, [suggested, selectedMin, energy]);
 
   const handlePickTime = (minutes: number) => {
     setSelectedMin(minutes);
@@ -103,10 +138,7 @@ export function FocusCard({ tasks }: FocusCardProps) {
         <div className="mt-3.5 rounded-[18px] bg-white/[.14] p-3.5">
           {suggested ? (
             <>
-              <p className="mb-1.5 text-xs text-white/85">
-                ✦ Підходить під «{ENERGY_WORD[energy]}» і {selectedMin === 999 ? "вільний час" : `${selectedMin} хв`},
-                що в тебе є
-              </p>
+              <p className="mb-1.5 text-xs text-white/85">{suggestionReason}</p>
               <p className="text-[16px] font-bold leading-snug">{suggested.title}</p>
               <p className="mt-1.5 flex items-center gap-3 text-[12.5px] text-white/85">
                 <span>🕐 {suggested.duration_minutes} хв</span>

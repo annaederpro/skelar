@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Check } from "lucide-react";
+import { Clock, Check, Folder, CalendarDays } from "lucide-react";
 import type { DbTask, EnergyLevel } from "@/types/gentle";
 import {
   EFFORT_WORD,
@@ -9,11 +9,19 @@ import {
   PRIORITY_BUCKET_PILL_CLASS,
   PRIORITY_BUCKET_BAR_CLASS,
 } from "@/types/gentle";
+import { getAppToday } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
   task: DbTask;
+  projectName?: string;
   onToggleComplete?: (task: DbTask) => void;
+}
+
+// "2026-07-22" → "22.07"
+function formatDueDate(isoDate: string): string {
+  const [, month, day] = isoDate.split("-");
+  return `${day}.${month}`;
 }
 
 function EffortDots({ level }: { level: EnergyLevel }) {
@@ -35,10 +43,12 @@ function EffortDots({ level }: { level: EnergyLevel }) {
   );
 }
 
-export function TaskCard({ task, onToggleComplete }: TaskCardProps) {
+export function TaskCard({ task, projectName, onToggleComplete }: TaskCardProps) {
   const isCompleted = task.status === "completed";
   const bucket = priorityBucket(task.priority);
   const isSeeded = task.is_seeded && !isCompleted;
+  const isDueUrgent =
+    !isCompleted && task.due_date !== null && task.due_date <= getAppToday();
 
   return (
     <div
@@ -102,6 +112,23 @@ export function TaskCard({ task, onToggleComplete }: TaskCardProps) {
             {task.duration_minutes} хв
           </span>
           <EffortDots level={task.energy_level} />
+          {task.due_date && (
+            <span
+              className={cn(
+                "flex items-center gap-[5px]",
+                isDueUrgent && "font-bold text-coral",
+              )}
+            >
+              <CalendarDays className="size-3.5" />
+              {formatDueDate(task.due_date)}
+            </span>
+          )}
+          {projectName && (
+            <span className="flex min-w-0 items-center gap-[5px]">
+              <Folder className="size-3.5 shrink-0" />
+              <span className="truncate">{projectName}</span>
+            </span>
+          )}
           {isSeeded && (
             <span className="font-bold text-sea-deep">🥚 ікринка</span>
           )}
