@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { QuickAddTaskForm } from "@/components/gentle/quick-add-task-form";
-import { addTask } from "@/app/actions";
+import { addTask, parseTaskWithAI } from "@/app/actions";
 import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
 
 interface AddTaskDialogProps {
@@ -70,6 +70,7 @@ export function AddTaskDialog({
         )}
         <QuickAddTaskForm
           onAdd={handleAdd}
+          onParseWithAI={parseTaskWithAI}
           disabledEnergyLevels={disabledEnergyLevels}
           projects={projects}
         />
