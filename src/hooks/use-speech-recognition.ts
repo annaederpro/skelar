@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseSpeechRecognitionOptions {
   lang?: string;
@@ -23,7 +23,9 @@ export function useSpeechRecognition({
 
   // Keep latest callbacks without re-creating the recognition session mid-recording.
   const callbacksRef = useRef({ onResult, onInterim, onEnd });
-  callbacksRef.current = { onResult, onInterim, onEnd };
+  useEffect(() => {
+    callbacksRef.current = { onResult, onInterim, onEnd };
+  });
 
   const isSupported =
     typeof window !== "undefined" &&
