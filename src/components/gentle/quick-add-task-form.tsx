@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2, Sparkles } from "lucide-react";
+import { Plus, Mic, Loader2, Sparkles } from "lucide-react";
 import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
 import {
   EFFORT_WORD,
@@ -27,13 +27,6 @@ interface QuickAddTaskFormProps {
   onParseWithAI: (rawText: string) => Promise<ParseTaskResult>;
   disabledEnergyLevels?: EnergyLevel[];
   projects?: DbProject[];
-  /**
-   * Mirrors the physical hold state of the dedicated audio FAB (true while
-   * held, false on release) so a press-and-hold that started on the main
-   * screen, before this form even mounted, keeps controlling the same
-   * recording session once the dialog opens.
-   */
-  micHoldActive?: boolean;
 }
 
 const ENERGY_OPTIONS: EnergyLevel[] = [1, 2, 3];
@@ -53,7 +46,6 @@ export function QuickAddTaskForm({
   onParseWithAI,
   disabledEnergyLevels = [],
   projects = [],
-  micHoldActive = false,
 }: QuickAddTaskFormProps) {
   const [step, setStep] = useState<"input" | "review">("input");
   const [aiText, setAiText] = useState("");
@@ -157,21 +149,6 @@ export function QuickAddTaskForm({
     stopListening();
   };
 
-  // The dedicated audio FAB is pressed/released on the main screen, before
-  // (and after) this form is even mounted — this mirrors that hold state
-  // onto the same start/release logic the inline mic button uses, so one
-  // continuous hold gesture drives the whole capture regardless of the
-  // dialog mounting mid-gesture.
-  useEffect(() => {
-    if (!isMicSupported) return;
-    if (micHoldActive) {
-      handleMicPress();
-    } else {
-      handleMicRelease();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [micHoldActive]);
-
   const resetAll = () => {
     setStep("input");
     setText("");
@@ -219,20 +196,42 @@ export function QuickAddTaskForm({
             Слухаю… відпусти кнопку, коли договориш
           </p>
         )}
-        <Button
-          type="button"
-          size="sm"
-          className="h-9 w-full rounded-full"
-          disabled={isParsing || isListening}
-          onClick={() => void runParse(aiTextRef.current)}
-        >
-          {isParsing ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Sparkles className="size-3.5" />
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            className="h-9 flex-1 rounded-full"
+            disabled={isParsing || isListening}
+            onClick={() => void runParse(aiTextRef.current)}
+          >
+            {isParsing ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="size-3.5" />
+            )}
+            {isParsing ? "Розбираю..." : "Створити"}
+          </Button>
+          {isMicSupported && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-lg"
+              disabled={isParsing}
+              onPointerDown={handleMicPress}
+              onPointerUp={handleMicRelease}
+              onPointerLeave={handleMicRelease}
+              onPointerCancel={handleMicRelease}
+              onContextMenu={(e) => e.preventDefault()}
+              className={cn(
+                "touch-none select-none",
+                isListening && "animate-pulse border-coral bg-coral text-white hover:bg-coral",
+              )}
+              aria-label="Утримуй, щоб наговорити задачу"
+            >
+              <Mic className="size-4" />
+            </Button>
           )}
-          {isParsing ? "Розбираю..." : "Створити"}
-        </Button>
+        </div>
       </div>
     );
   }

@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { QuickAddTaskForm } from "@/components/gentle/quick-add-task-form";
 import { addTask, parseTaskWithAI } from "@/app/actions";
@@ -15,18 +16,17 @@ import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
 interface AddTaskDialogProps {
   projects: DbProject[];
   disabledEnergyLevels?: EnergyLevel[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  micHoldActive?: boolean;
+  triggerClassName?: string;
+  children: React.ReactNode;
 }
 
 export function AddTaskDialog({
   projects,
   disabledEnergyLevels = [],
-  open,
-  onOpenChange,
-  micHoldActive = false,
+  triggerClassName,
+  children,
 }: AddTaskDialogProps) {
+  const [open, setOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successTitle, setSuccessTitle] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,7 +52,7 @@ export function AddTaskDialog({
       setErrorMessage(result.error);
       return;
     }
-    onOpenChange(false);
+    setOpen(false);
     setSuccessTitle(input.title);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => setSuccessTitle(null), 2600);
@@ -64,12 +64,13 @@ export function AddTaskDialog({
       <Dialog
         open={open}
         onOpenChange={(next) => {
-          onOpenChange(next);
+          setOpen(next);
           if (next === false) {
             setErrorMessage(null);
           }
         }}
       >
+        <DialogTrigger className={triggerClassName}>{children}</DialogTrigger>
         <DialogContent className="top-[6vh] max-h-[88vh] translate-y-0 overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Нова задача</DialogTitle>
@@ -84,7 +85,6 @@ export function AddTaskDialog({
             onParseWithAI={parseTaskWithAI}
             disabledEnergyLevels={disabledEnergyLevels}
             projects={projects}
-            micHoldActive={micHoldActive}
           />
         </DialogContent>
       </Dialog>
