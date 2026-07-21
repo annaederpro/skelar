@@ -4,6 +4,7 @@ import { Clock, Check, Folder, CalendarDays } from "lucide-react";
 import type { DbTask, EnergyLevel } from "@/types/gentle";
 import {
   EFFORT_WORD,
+  formatDuration,
   priorityBucket,
   PRIORITY_BUCKET_LABEL,
   PRIORITY_BUCKET_PILL_CLASS,
@@ -109,7 +110,7 @@ export function TaskCard({ task, projectName, onToggleComplete }: TaskCardProps)
         >
           <span className="flex items-center gap-[5px]">
             <Clock className="size-3.5" />
-            {task.duration_minutes} хв
+            {formatDuration(task.duration_minutes)}
           </span>
           <EffortDots level={task.energy_level} />
           {task.due_date && (

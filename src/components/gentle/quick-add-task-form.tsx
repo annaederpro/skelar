@@ -31,6 +31,16 @@ interface QuickAddTaskFormProps {
 
 const ENERGY_OPTIONS: EnergyLevel[] = [1, 2, 3];
 
+type DurationUnit = "min" | "hour";
+
+// Long tasks read as hours ("3" + год), short ones as minutes ("15" + хв).
+function splitMinutes(minutes: number): { value: string; unit: DurationUnit } {
+  if (minutes >= 60 && minutes % 30 === 0) {
+    return { value: String(minutes / 60), unit: "hour" };
+  }
+  return { value: String(minutes), unit: "min" };
+}
+
 export function QuickAddTaskForm({
   onAdd,
   onParseWithAI,
@@ -44,10 +54,26 @@ export function QuickAddTaskForm({
 
   const [title, setTitle] = useState("");
   const [energyLevel, setEnergyLevel] = useState<EnergyLevel>(1);
-  const [duration, setDuration] = useState(30);
+  // Duration is kept as a raw string + unit: a controlled number input that
+  // coerces to a number on every keystroke can't be cleared on iOS (the forced
+  // "0" re-render leaves artifacts like "018").
+  const [durationValue, setDurationValue] = useState("30");
+  const [durationUnit, setDurationUnit] = useState<DurationUnit>("min");
   const [projectId, setProjectId] = useState<string | null>(null);
   const [priority, setPriority] = useState<Priority>(4);
   const [dueDate, setDueDate] = useState("");
+
+  const setDurationFromMinutes = (minutes: number) => {
+    const { value, unit } = splitMinutes(minutes);
+    setDurationValue(value);
+    setDurationUnit(unit);
+  };
+
+  const durationInMinutes = (): number => {
+    const n = Number(durationValue.replace(",", "."));
+    if (!Number.isFinite(n) || n <= 0) return 30;
+    return Math.round(durationUnit === "hour" ? n * 60 : n);
+  };
 
   // Latest text, readable from speech callbacks without stale-closure issues.
   const aiTextRef = useRef("");
@@ -73,7 +99,7 @@ export function QuickAddTaskForm({
       setTitle(result.title);
       setPriority(result.priority ?? 4);
       setEnergyLevel(result.energyLevel ?? 1);
-      setDuration(result.durationMinutes ?? 30);
+      setDurationFromMinutes(result.durationMinutes ?? 30);
       setProjectId(result.projectId);
       setDueDate(result.dueDate ?? "");
       setAiNotice(null);
@@ -81,7 +107,7 @@ export function QuickAddTaskForm({
       setTitle(result.rawText);
       setPriority(4);
       setEnergyLevel(1);
-      setDuration(30);
+      setDurationFromMinutes(30);
       setProjectId(null);
       setDueDate("");
       setAiNotice("AI-розбір не спрацював — перевір поля перед створенням.");
@@ -130,7 +156,7 @@ export function QuickAddTaskForm({
     setAiNotice(null);
     setTitle("");
     setEnergyLevel(1);
-    setDuration(30);
+    setDurationFromMinutes(30);
     setProjectId(null);
     setPriority(4);
     setDueDate("");
@@ -144,7 +170,7 @@ export function QuickAddTaskForm({
     onAdd({
       title: trimmed,
       energyLevel,
-      durationMinutes: duration,
+      durationMinutes: durationInMinutes(),
       projectId,
       priority,
       dueDate: dueDate || null,
@@ -260,14 +286,29 @@ export function QuickAddTaskForm({
         <span className="text-xs text-ink-soft">{EFFORT_WORD[energyLevel]}</span>
 
         <Input
-          type="number"
-          min={5}
-          step={5}
-          value={duration}
-          onChange={(e) => setDuration(Number(e.target.value) || 0)}
-          className="ml-2 w-20"
+          type="text"
+          inputMode="decimal"
+          value={durationValue}
+          onChange={(e) => setDurationValue(e.target.value)}
+          aria-label="Тривалість"
+          className="ml-2 w-16"
         />
-        <span className="text-xs text-ink-soft">хв</span>
+        <div className="flex gap-1 rounded-full bg-muted p-0.5 text-xs font-bold">
+          {(["min", "hour"] as const).map((unit) => (
+            <button
+              key={unit}
+              type="button"
+              onClick={() => setDurationUnit(unit)}
+              aria-pressed={durationUnit === unit}
+              className={cn(
+                "rounded-full px-2.5 py-1 transition-colors",
+                durationUnit === unit ? "bg-card text-ink" : "text-ink-soft",
+              )}
+            >
+              {unit === "min" ? "хв" : "год"}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* priority — 3 human buckets */}

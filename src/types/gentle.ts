@@ -37,6 +37,14 @@ export interface DbTask {
   is_seeded: boolean;
 }
 
+// "25" → "25 хв", "180" → "3 год", "90" → "1 год 30 хв"
+export function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} хв`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours} год` : `${hours} год ${rest} хв`;
+}
+
 // coralQ effort words (energy_level rendered as "effort" on task cards)
 export const EFFORT_WORD: Record<EnergyLevel, string> = {
   1: "легка",

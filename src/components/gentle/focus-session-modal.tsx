@@ -7,7 +7,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { finishFocusSession, leaveFocusSession } from "@/app/actions";
 import { useOceanNoise } from "@/lib/ocean-noise";
-import { EFFORT_WORD, priorityBucket, PRIORITY_BUCKET_LABEL } from "@/types/gentle";
+import { EFFORT_WORD, formatDuration, priorityBucket, PRIORITY_BUCKET_LABEL } from "@/types/gentle";
 import type { DbTask } from "@/types/gentle";
 import { cn } from "@/lib/utils";
 
@@ -106,7 +106,7 @@ export function FocusSessionModal({ task, onClose, onCelebrate, onLeaveEgg }: Fo
             <div className="text-xs font-extrabold uppercase tracking-widest text-sea">Фокус</div>
             <h2 className="mt-2 font-heading text-xl font-semibold leading-tight">{task.title}</h2>
             <p className="mt-1 text-[13px] text-ink-soft">
-              {task.duration_minutes} хв · {EFFORT_WORD[task.energy_level]} ·{" "}
+              {formatDuration(task.duration_minutes)} · {EFFORT_WORD[task.energy_level]} ·{" "}
               {PRIORITY_BUCKET_LABEL[priorityBucket(task.priority)]}
             </p>
 

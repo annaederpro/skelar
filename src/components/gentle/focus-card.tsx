@@ -5,7 +5,7 @@ import { Waves } from "lucide-react";
 import { useResourceStatus } from "@/context/resource-status-context";
 import { FocusSessionModal } from "@/components/gentle/focus-session-modal";
 import { CelebrationModal, type CelebrationKind } from "@/components/gentle/celebration-modal";
-import { EFFORT_WORD, priorityBucket, PRIORITY_BUCKET_LABEL } from "@/types/gentle";
+import { EFFORT_WORD, formatDuration, priorityBucket, PRIORITY_BUCKET_LABEL } from "@/types/gentle";
 import type { DbTask, ResourceStatus } from "@/types/gentle";
 import { getAppToday } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -141,7 +141,7 @@ export function FocusCard({ tasks }: FocusCardProps) {
               <p className="mb-1.5 text-xs text-white/85">{suggestionReason}</p>
               <p className="text-[16px] font-bold leading-snug">{suggested.title}</p>
               <p className="mt-1.5 flex items-center gap-3 text-[12.5px] text-white/85">
-                <span>🕐 {suggested.duration_minutes} хв</span>
+                <span>🕐 {formatDuration(suggested.duration_minutes)}</span>
                 <span>{EFFORT_WORD[suggested.energy_level]}</span>
                 <span>{PRIORITY_BUCKET_LABEL[priorityBucket(suggested.priority)]}</span>
               </p>
