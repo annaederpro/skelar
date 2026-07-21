@@ -27,8 +27,13 @@ interface QuickAddTaskFormProps {
   onParseWithAI: (rawText: string) => Promise<ParseTaskResult>;
   disabledEnergyLevels?: EnergyLevel[];
   projects?: DbProject[];
-  /** Start listening immediately on mount (opened via the dedicated audio FAB). */
-  autoStartListening?: boolean;
+  /**
+   * Mirrors the physical hold state of the dedicated audio FAB (true while
+   * held, false on release) so a press-and-hold that started on the main
+   * screen, before this form even mounted, keeps controlling the same
+   * recording session once the dialog opens.
+   */
+  micHoldActive?: boolean;
 }
 
 const ENERGY_OPTIONS: EnergyLevel[] = [1, 2, 3];
@@ -48,7 +53,7 @@ export function QuickAddTaskForm({
   onParseWithAI,
   disabledEnergyLevels = [],
   projects = [],
-  autoStartListening = false,
+  micHoldActive = false,
 }: QuickAddTaskFormProps) {
   const [step, setStep] = useState<"input" | "review">("input");
   const [aiText, setAiText] = useState("");
@@ -152,14 +157,20 @@ export function QuickAddTaskForm({
     stopListening();
   };
 
-  // Opened via the dedicated audio FAB — start listening right away instead
-  // of requiring an extra press-and-hold on the inline mic button.
+  // The dedicated audio FAB is pressed/released on the main screen, before
+  // (and after) this form is even mounted — this mirrors that hold state
+  // onto the same start/release logic the inline mic button uses, so one
+  // continuous hold gesture drives the whole capture regardless of the
+  // dialog mounting mid-gesture.
   useEffect(() => {
-    if (autoStartListening && isMicSupported) {
+    if (!isMicSupported) return;
+    if (micHoldActive) {
       handleMicPress();
+    } else {
+      handleMicRelease();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [micHoldActive]);
 
   const resetAll = () => {
     setStep("input");

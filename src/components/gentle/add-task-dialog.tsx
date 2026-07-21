@@ -17,7 +17,7 @@ interface AddTaskDialogProps {
   disabledEnergyLevels?: EnergyLevel[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  autoStartListening?: boolean;
+  micHoldActive?: boolean;
 }
 
 export function AddTaskDialog({
@@ -25,7 +25,7 @@ export function AddTaskDialog({
   disabledEnergyLevels = [],
   open,
   onOpenChange,
-  autoStartListening = false,
+  micHoldActive = false,
 }: AddTaskDialogProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successTitle, setSuccessTitle] = useState<string | null>(null);
@@ -84,7 +84,7 @@ export function AddTaskDialog({
             onParseWithAI={parseTaskWithAI}
             disabledEnergyLevels={disabledEnergyLevels}
             projects={projects}
-            autoStartListening={autoStartListening}
+            micHoldActive={micHoldActive}
           />
         </DialogContent>
       </Dialog>
