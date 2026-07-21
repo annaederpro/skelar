@@ -70,7 +70,7 @@ export function AddTaskDialog({
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="top-[6vh] max-h-[88vh] translate-y-0 overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Нова задача</DialogTitle>
           </DialogHeader>
