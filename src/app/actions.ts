@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { parseTaskWithOpenRouter, type ParseTaskResult } from "@/lib/ai/parse-task";
 import type {
   DbProject,
   DbTask,
@@ -249,4 +250,23 @@ export async function createProject(
   }
 
   return { project: data as DbProject };
+}
+
+export async function parseTaskWithAI(rawText: string): Promise<ParseTaskResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, rawText };
+  }
+
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("id, name")
+    .eq("user_id", user.id);
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  return parseTaskWithOpenRouter(rawText, projects ?? [], todayIso);
 }
