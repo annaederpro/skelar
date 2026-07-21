@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Mic, Loader2, Sparkles } from "lucide-react";
@@ -27,6 +27,8 @@ interface QuickAddTaskFormProps {
   onParseWithAI: (rawText: string) => Promise<ParseTaskResult>;
   disabledEnergyLevels?: EnergyLevel[];
   projects?: DbProject[];
+  /** Start listening immediately on mount (opened via the dedicated audio FAB). */
+  autoStartListening?: boolean;
 }
 
 const ENERGY_OPTIONS: EnergyLevel[] = [1, 2, 3];
@@ -46,6 +48,7 @@ export function QuickAddTaskForm({
   onParseWithAI,
   disabledEnergyLevels = [],
   projects = [],
+  autoStartListening = false,
 }: QuickAddTaskFormProps) {
   const [step, setStep] = useState<"input" | "review">("input");
   const [aiText, setAiText] = useState("");
@@ -148,6 +151,15 @@ export function QuickAddTaskForm({
     parseOnEndRef.current = true;
     stopListening();
   };
+
+  // Opened via the dedicated audio FAB — start listening right away instead
+  // of requiring an extra press-and-hold on the inline mic button.
+  useEffect(() => {
+    if (autoStartListening && isMicSupported) {
+      handleMicPress();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const resetAll = () => {
     setStep("input");

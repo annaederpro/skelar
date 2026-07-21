@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { QuickAddTaskForm } from "@/components/gentle/quick-add-task-form";
 import { addTask, parseTaskWithAI } from "@/app/actions";
@@ -16,17 +15,18 @@ import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
 interface AddTaskDialogProps {
   projects: DbProject[];
   disabledEnergyLevels?: EnergyLevel[];
-  triggerClassName?: string;
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  autoStartListening?: boolean;
 }
 
 export function AddTaskDialog({
   projects,
   disabledEnergyLevels = [],
-  triggerClassName,
-  children,
+  open,
+  onOpenChange,
+  autoStartListening = false,
 }: AddTaskDialogProps) {
-  const [open, setOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successTitle, setSuccessTitle] = useState<string | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,7 +52,7 @@ export function AddTaskDialog({
       setErrorMessage(result.error);
       return;
     }
-    setOpen(false);
+    onOpenChange(false);
     setSuccessTitle(input.title);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => setSuccessTitle(null), 2600);
@@ -64,13 +64,12 @@ export function AddTaskDialog({
       <Dialog
         open={open}
         onOpenChange={(next) => {
-          setOpen(next);
+          onOpenChange(next);
           if (next === false) {
             setErrorMessage(null);
           }
         }}
       >
-        <DialogTrigger className={triggerClassName}>{children}</DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Нова задача</DialogTitle>
@@ -85,6 +84,7 @@ export function AddTaskDialog({
             onParseWithAI={parseTaskWithAI}
             disabledEnergyLevels={disabledEnergyLevels}
             projects={projects}
+            autoStartListening={autoStartListening}
           />
         </DialogContent>
       </Dialog>
