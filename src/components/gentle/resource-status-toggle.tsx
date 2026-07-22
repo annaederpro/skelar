@@ -50,7 +50,7 @@ export function ResourceStatusToggle({
             aria-checked={isActive}
             onClick={() => onChange(v)}
             className={cn(
-              "rounded-[20px] border-[1.5px] px-1.5 pb-2.5 pt-3 text-center text-[13px] font-bold shadow-sm transition-all",
+              "rounded-[14px] border-[1.5px] px-1.5 py-2 text-center text-[12.5px] font-bold shadow-sm transition-all",
               isActive
                 ? cn("-translate-y-0.5 border-transparent", activeClass)
                 : "border-line bg-card text-ink-soft hover:-translate-y-0.5",

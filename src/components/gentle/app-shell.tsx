@@ -45,10 +45,7 @@ function AppHeader({ openTasks }: { openTasks: DbTask[] }) {
         </div>
       </div>
       {showFocus && (
-        <>
-          <p className="text-[15px] text-ink-soft">Скільки в тебе енергії зараз?</p>
-          <ResourceStatusToggle value={resourceStatus} onChange={setResourceStatus} />
-        </>
+        <ResourceStatusToggle value={resourceStatus} onChange={setResourceStatus} />
       )}
       {showFocus && <FocusCard tasks={openTasks} />}
       {showFocus && isDepleted && <DepletedBanner />}
