@@ -278,6 +278,37 @@ export async function createProject(
   return { project: data as DbProject };
 }
 
+export async function updateProjectName(
+  projectId: string,
+  name: string,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { error: "Назва проєкту не може бути порожньою." };
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ name: trimmed })
+    .eq("id", projectId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { error: "Не вдалося перейменувати проєкт, спробуй ще раз." };
+  }
+
+  return { ok: true };
+}
+
 export async function deleteProject(
   projectId: string,
 ): Promise<{ ok: true } | { error: string }> {

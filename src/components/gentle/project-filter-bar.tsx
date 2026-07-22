@@ -1,7 +1,17 @@
 "use client";
 
-import { Plus, Check } from "lucide-react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Plus, Check, Pencil, Trash2, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { deleteProject, updateProjectName } from "@/app/actions";
+import {
+  Popover,
+  PopoverPortal,
+  PopoverPositioner,
+  PopoverPopup,
+} from "@/components/ui/popover";
 
 // "all" shows everything, "none" shows tasks without a project, otherwise a project id.
 export type ProjectFilter = "all" | "none" | string;
@@ -25,6 +35,9 @@ const chipClass = (isActive: boolean) =>
       : "border-line bg-card text-ink-soft hover:text-ink",
   );
 
+const LONG_PRESS_MS = 500;
+const MOVE_CANCEL_PX = 10;
+
 export function ProjectFilterBar({
   projects,
   projectFilter,
@@ -35,10 +48,94 @@ export function ProjectFilterBar({
   onNewProjectNameChange,
   onCreateProject,
 }: ProjectFilterBarProps) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  const anchorRef = useRef<HTMLButtonElement | null>(null);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const longPressFiredRef = useRef(false);
+  const skipBlurSaveRef = useRef(false);
+
+  const clearPressTimer = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+    pressStart.current = null;
+  };
+
+  const handleChipPointerDown = (
+    e: React.PointerEvent<HTMLButtonElement>,
+    projectId: string,
+  ) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    pressStart.current = { x: e.clientX, y: e.clientY };
+    const target = e.currentTarget;
+    pressTimer.current = setTimeout(() => {
+      longPressFiredRef.current = true;
+      anchorRef.current = target;
+      setMenuProjectId(projectId);
+    }, LONG_PRESS_MS);
+  };
+
+  const handleChipPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!pressStart.current) return;
+    const dx = e.clientX - pressStart.current.x;
+    const dy = e.clientY - pressStart.current.y;
+    if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) clearPressTimer();
+  };
+
+  const handleChipClick = (projectId: string) => {
+    if (longPressFiredRef.current) {
+      longPressFiredRef.current = false;
+      return;
+    }
+    onSelectFilter(projectId);
+  };
+
+  const activeMenuProject = projects.find((p) => p.id === menuProjectId) ?? null;
+
+  const handleEditFromMenu = () => {
+    if (!activeMenuProject) return;
+    setEditingProjectId(activeMenuProject.id);
+    setRenameValue(activeMenuProject.name);
+    setMenuProjectId(null);
+  };
+
+  const handleDeleteFromMenu = () => {
+    if (!activeMenuProject) return;
+    const project = activeMenuProject;
+    setMenuProjectId(null);
+    if (!window.confirm(`Видалити проєкт «${project.name}»? Задачі залишаться без проєкту.`)) {
+      return;
+    }
+    startTransition(async () => {
+      const result = await deleteProject(project.id);
+      if (!("error" in result)) {
+        if (projectFilter === project.id) onSelectFilter("all");
+        router.refresh();
+      }
+    });
+  };
+
+  const saveRename = (project: { id: string; name: string }) => {
+    const trimmed = renameValue.trim();
+    setEditingProjectId(null);
+    if (!trimmed || trimmed === project.name) return;
+    startTransition(async () => {
+      const result = await updateProjectName(project.id, trimmed);
+      if (!("error" in result)) router.refresh();
+    });
+  };
+
   return (
     <>
       <div
-        className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="group"
         aria-label="Фільтр за проєктом"
       >
@@ -60,17 +157,49 @@ export function ProjectFilterBar({
             >
               Без проєкту
             </button>
-            {projects.map((project) => (
-              <button
-                key={project.id}
-                type="button"
-                onClick={() => onSelectFilter(project.id)}
-                aria-pressed={projectFilter === project.id}
-                className={chipClass(projectFilter === project.id)}
-              >
-                {project.name}
-              </button>
-            ))}
+            {projects.map((project) =>
+              editingProjectId === project.id ? (
+                <input
+                  key={project.id}
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={() => {
+                    if (skipBlurSaveRef.current) {
+                      skipBlurSaveRef.current = false;
+                      return;
+                    }
+                    saveRename(project);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      saveRename(project);
+                    } else if (e.key === "Escape") {
+                      skipBlurSaveRef.current = true;
+                      setEditingProjectId(null);
+                    }
+                  }}
+                  autoFocus
+                  aria-label={`Назва проєкту ${project.name}`}
+                  className={cn(chipClass(true), "w-28 outline-none")}
+                />
+              ) : (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => handleChipClick(project.id)}
+                  onPointerDown={(e) => handleChipPointerDown(e, project.id)}
+                  onPointerMove={handleChipPointerMove}
+                  onPointerUp={clearPressTimer}
+                  onPointerLeave={clearPressTimer}
+                  onPointerCancel={clearPressTimer}
+                  aria-pressed={projectFilter === project.id}
+                  className={chipClass(projectFilter === project.id)}
+                >
+                  {project.name}
+                </button>
+              ),
+            )}
           </>
         )}
         <button
@@ -82,6 +211,13 @@ export function ProjectFilterBar({
           <Plus className="size-3.5" />
           {projects.length === 0 && "Проєкт"}
         </button>
+        <Link
+          href="/browse"
+          aria-label="Переглянути всі проєкти"
+          className={cn(chipClass(false), "flex items-center gap-1")}
+        >
+          <FolderOpen className="size-3.5" />
+        </Link>
       </div>
 
       {isCreatingProject && (
@@ -103,6 +239,34 @@ export function ProjectFilterBar({
           </button>
         </form>
       )}
+
+      <Popover
+        open={menuProjectId !== null}
+        onOpenChange={(open) => !open && setMenuProjectId(null)}
+      >
+        <PopoverPortal>
+          <PopoverPositioner anchor={anchorRef} side="bottom" align="start">
+            <PopoverPopup>
+              <button
+                type="button"
+                onClick={handleEditFromMenu}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-left font-semibold text-ink hover:bg-muted"
+              >
+                <Pencil className="size-4" />
+                Редагувати
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteFromMenu}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-left font-semibold text-coral hover:bg-coral-soft/60"
+              >
+                <Trash2 className="size-4" />
+                Видалити
+              </button>
+            </PopoverPopup>
+          </PopoverPositioner>
+        </PopoverPortal>
+      </Popover>
     </>
   );
 }
