@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html
       lang="uk"
-      className={`${nunitoSans.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${nunitoSans.variable} ${fraunces.variable} h-dvh antialiased`}
     >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
