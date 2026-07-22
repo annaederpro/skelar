@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A Telegram bot webhook (`/api/telegram/webhook`) that turns forwarded voice or text messages into coralQ tasks: voice is transcribed via OpenAI Whisper, everything is parsed by the existing `parseTaskWithOpenRouter`, and the task is inserted for the linked user via the Supabase service-role client.
+**Goal:** A Telegram bot webhook (`/api/telegram/webhook`) that turns forwarded voice or text messages into coralQ tasks: voice is transcribed via Whisper (through OpenRouter — see the Task 3 correction note), everything is parsed by the existing `parseTaskWithOpenRouter`, and the task is inserted for the linked user via the Supabase service-role client.
 
 **Architecture:** One Next.js Route Handler wraps a grammY `Bot` via `webhookCallback(bot, "std/http", { secretToken })`. Fast handlers (`/start`, `/link`, unlinked-chat replies) run inline; the heavy pipeline (download → Whisper → parse → insert → confirm) runs in Next.js `after()` so Telegram gets its ack in milliseconds and grammY's 10s webhook timeout never fires. The parse and insert logic currently inlined in the `parseTaskWithAI`/`addTask` Server Actions is extracted into client-injected helpers shared by both the browser path (cookie client) and the bot path (admin client).
 
-**Tech Stack:** Next.js 16 Route Handlers + `after()`, grammY (new dependency, the only one), raw `fetch`/`FormData` to OpenAI `audio/transcriptions` (`whisper-1`), existing `parseTaskWithOpenRouter` (OpenRouter), Supabase service-role client (`createAdminClient`).
+**Tech Stack:** Next.js 16 Route Handlers + `after()`, grammY (new dependency, the only one), raw `fetch`/`FormData` to OpenRouter's `audio/transcriptions` endpoint (`openai/whisper-1`), existing `parseTaskWithOpenRouter` (OpenRouter), Supabase service-role client (`createAdminClient`).
 
 **Spec:** `docs/superpowers/specs/2026-07-21-telegram-voice-capture-design.md`
 
@@ -14,8 +14,8 @@
 
 - This repo runs a modified Next.js 16 — check `node_modules/next/dist/docs/` if any API is in doubt; `after()` and Route Handler conventions were already verified there (`after` is stable, Route Handlers use Web `Request`/`Response`).
 - All user-facing bot copy is Ukrainian, matching the tone of existing strings in `src/app/actions.ts` (e.g. `"Щось пішло не так, спробуй ще раз."`).
-- Env vars `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_LINK_SECRET`, `TELEGRAM_OWNER_EMAIL`, `OPENAI_API_KEY` are server-only: never `NEXT_PUBLIC_`-prefixed, never read from a `"use client"` file.
-- `grammy` is the only new npm dependency. Whisper is called with raw `fetch` + `FormData`, mirroring the hand-rolled OpenRouter call in `src/lib/ai/parse-task.ts`. Do not install the `openai` package.
+- Env vars `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_LINK_SECRET`, `TELEGRAM_OWNER_EMAIL` are server-only: never `NEXT_PUBLIC_`-prefixed, never read from a `"use client"` file. (No separate OpenAI key — Whisper goes through the existing `OPENROUTER_API_KEY`, see Task 3.)
+- `grammy` is the only new npm dependency. Whisper is called with raw `fetch` + `FormData` against OpenRouter's transcription endpoint, mirroring the hand-rolled OpenRouter chat-completions call in `src/lib/ai/parse-task.ts`. Do not install the `openai` package.
 - Existing exported signatures of `addTask` and `parseTaskWithAI` in `src/app/actions.ts` must not change (the quick-add form imports them).
 - No test runner exists in this repo; each task's gate is `npx tsc --noEmit` + `npm run lint`, and Tasks 6–7 are the manual verification defined by the spec.
 - Every commit: `git commit --no-gpg-sign` (pinentry cannot prompt in this environment).
@@ -55,12 +55,11 @@ TELEGRAM_BOT_TOKEN=
 TELEGRAM_WEBHOOK_SECRET=
 TELEGRAM_LINK_SECRET=
 TELEGRAM_OWNER_EMAIL=
-
-# OpenAI (Whisper transcription for Telegram voice notes)
-OPENAI_API_KEY=
 ```
 
-All other lines (Supabase, Gemini, OpenRouter) stay untouched.
+All other lines (Supabase, Gemini, OpenRouter) stay untouched. No separate
+OpenAI section is needed — Whisper transcription (Task 3) goes through the
+existing `OPENROUTER_API_KEY`.
 
 - [ ] **Step 3: Verify**
 
@@ -226,49 +225,68 @@ git commit --no-gpg-sign -m "refactor: extract client-injected parse/insert help
 - Create: `src/lib/telegram/transcribe.ts`
 
 **Interfaces:**
-- Consumes: `OPENAI_API_KEY` env var; a fully-qualified Telegram file URL.
+- Consumes: `OPENROUTER_API_KEY` env var (see correction below); a fully-qualified Telegram file URL.
 - Produces (Task 4 relies on this): `transcribeVoice(fileUrl: string): Promise<string | null>` — transcript text, or `null` on any failure (missing key, download error, API error, empty transcript).
+
+> **Correction (post Task 7 real-device test):** the plan originally called
+> direct OpenAI (`OPENAI_API_KEY`, `api.openai.com`). Real voice notes
+> consistently failed. Root-cause testing — calling the transcription
+> endpoint directly with the exact `.env.local` key, using a throwaway
+> garbage audio file to isolate auth from audio validity — showed OpenAI
+> returned `429 insufficient_quota` (key valid, no billing/credits on that
+> account). The same test against OpenRouter's
+> `/api/v1/audio/transcriptions` with the existing, already-funded
+> `OPENROUTER_API_KEY` returned `400` for the same garbage file (auth and
+> quota both fine, only the fake audio was rejected) — confirming the fix
+> below before writing it. `OPENAI_API_KEY` is no longer used anywhere and
+> was removed from `.env.local.example`.
 
 - [ ] **Step 1: Create `src/lib/telegram/transcribe.ts`**
 
 ```ts
 /**
- * Downloads a Telegram voice file and transcribes it with OpenAI Whisper.
- * Telegram voice notes are OGG/Opus; `ogg` is an accepted Whisper input
- * format, so the file is forwarded as-is under the name "voice.ogg" —
- * no audio conversion. Server-only (reads OPENAI_API_KEY).
+ * Downloads a Telegram voice file and transcribes it with Whisper via
+ * OpenRouter's OpenAI-compatible transcription endpoint (reuses the same
+ * OPENROUTER_API_KEY / account already used for task parsing, rather than a
+ * separate OpenAI account). Telegram voice notes are OGG/Opus; `ogg` is an
+ * accepted Whisper input format, so the file is forwarded as-is under the
+ * name "voice.ogg" — no audio conversion. Server-only.
  */
 export async function transcribeVoice(fileUrl: string): Promise<string | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
+    console.error("transcribeVoice: OPENROUTER_API_KEY is not set");
     return null;
   }
 
   try {
     const audioResponse = await fetch(fileUrl);
     if (!audioResponse.ok) {
+      console.error("transcribeVoice: failed to download voice file", audioResponse.status);
       return null;
     }
     const audioBlob = await audioResponse.blob();
 
     const form = new FormData();
     form.append("file", new File([audioBlob], "voice.ogg", { type: "audio/ogg" }));
-    form.append("model", "whisper-1");
+    form.append("model", "openai/whisper-1");
 
-    const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    const response = await fetch("https://openrouter.ai/api/v1/audio/transcriptions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
       body: form,
     });
 
     if (!response.ok) {
+      console.error("transcribeVoice: OpenRouter returned", response.status, await response.text());
       return null;
     }
 
     const body = await response.json();
     const text = typeof body?.text === "string" ? body.text.trim() : "";
     return text || null;
-  } catch {
+  } catch (err) {
+    console.error("transcribeVoice: unexpected error", err);
     return null;
   }
 }
@@ -605,9 +623,12 @@ git commit --no-gpg-sign -m "feat: Telegram webhook route handler with secret-to
 - Consumes: the running dev server, `.env.local` Supabase values, real `TELEGRAM_BOT_TOKEN` + `OPENROUTER_API_KEY`.
 - Produces: verified end-to-end text pipeline (webhook → parse → insert → sendMessage attempt) and verified link/unlinked guards.
 
-**This task needs the user.** Two values cannot be self-provisioned:
+**This task needs the user.** One value cannot be self-provisioned:
 - `TELEGRAM_BOT_TOKEN` — user creates the bot via @BotFather (`/newbot`) and pastes the token.
-- `OPENAI_API_KEY` — user pastes a key (only needed for Task 7's voice test; the text-path checks below run without it).
+
+(No separate OpenAI key needed for the voice leg — Whisper transcription
+goes through the existing `OPENROUTER_API_KEY`, already present in
+`.env.local` for text parsing.)
 
 A real (BotFather-issued) token is required even for synthetic local tests: grammY calls `getMe` on the first processed update, and a made-up token fails that call with 401. `TELEGRAM_WEBHOOK_SECRET` and `TELEGRAM_LINK_SECRET` are generated locally; `TELEGRAM_OWNER_EMAIL` must be the email of the user's actual coralQ account row in `public.users` (confirm with the user — likely `rene.eder@redfox.management`).
 
@@ -620,7 +641,7 @@ echo "TELEGRAM_WEBHOOK_SECRET=$(openssl rand -hex 16)"
 echo "TELEGRAM_LINK_SECRET=$(openssl rand -hex 8)"
 ```
 
-Add to `.env.local`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_LINK_SECRET`, `TELEGRAM_OWNER_EMAIL`, and (if available now) `OPENAI_API_KEY`.
+Add to `.env.local`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_LINK_SECRET`, `TELEGRAM_OWNER_EMAIL`.
 
 - [ ] **Step 2: Start the dev server**
 
@@ -705,7 +726,7 @@ Leave `telegram_chat_id = "999000111"` — Task 7's real `/link` from the phone 
 - Consumes: everything shipped in Tasks 1–6; a public HTTPS URL for the dev server (tunnel) or a deployment.
 - Produces: the feature verified the way it will actually be used — a voice note forwarded from a phone becomes a coralQ task.
 
-**This task needs the user** (their phone, their Telegram account, and `OPENAI_API_KEY` in `.env.local` for the Whisper leg).
+**This task needs the user** (their phone and their Telegram account — the Whisper leg uses the already-present `OPENROUTER_API_KEY`, no separate key needed).
 
 - [ ] **Step 1: Expose the local server over HTTPS**
 

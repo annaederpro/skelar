@@ -112,7 +112,7 @@ logic extraction" below — rather than duplicating them.
 |---|---|
 | `src/app/api/telegram/webhook/route.ts` | Route Handler. `export const runtime = "nodejs"`. Builds the `Bot` (from `src/lib/telegram/bot.ts`) and returns `webhookCallback(bot, "std/http", { secretToken: process.env.TELEGRAM_WEBHOOK_SECRET })` as `POST`. |
 | `src/lib/telegram/bot.ts` | Constructs the grammY `Bot` from `TELEGRAM_BOT_TOKEN`, registers `/start`, `/link`, `message:voice`, `message:text` handlers. |
-| `src/lib/telegram/transcribe.ts` | `transcribeVoice(fileUrl: string): Promise<string \| null>` — downloads the Telegram file, POSTs it to OpenAI's audio transcription endpoint as `voice.ogg` via `fetch`/`FormData`, returns the transcript or `null` on failure. |
+| `src/lib/telegram/transcribe.ts` | `transcribeVoice(fileUrl: string): Promise<string \| null>` — downloads the Telegram file, POSTs it to OpenRouter's OpenAI-compatible audio transcription endpoint (`openai/whisper-1`) as `voice.ogg` via `fetch`/`FormData`, returns the transcript or `null` on failure. |
 | `src/lib/ai/parse-task-for-user.ts` | `parseTaskForUser(supabase: SupabaseClient, userId: string, rawText: string): Promise<ParseTaskResult>` — extracted from the body of `parseTaskWithAI` (fetch the user's projects, build `todayIso`, call `parseTaskWithOpenRouter`). |
 | `src/lib/tasks/insert-task.ts` | `insertTaskForUser(supabase: SupabaseClient, userId: string, input): Promise<{ task: DbTask } \| { error: string }>` — extracted from the body of `addTask` (project-ownership check + insert with the same field defaults). |
 
@@ -251,24 +251,47 @@ the existing empty `TELEGRAM_BOT_TOKEN` line stays where it is):
 - `TELEGRAM_LINK_SECRET` — the code sent via `/link <secret>`.
 - `TELEGRAM_OWNER_EMAIL` — which `public.users` row `/link` writes
   `telegram_chat_id` onto.
-- `OPENAI_API_KEY` — new provider (existing AI parsing uses
-  `OPENROUTER_API_KEY`; Whisper transcription is a separate OpenAI-specific
-  endpoint), server-side only, read only in `transcribe.ts`.
+
+No new API key is needed for transcription — see the correction below.
 
 All of the above are server-only — none may be prefixed `NEXT_PUBLIC_` or
 read from a `"use client"` file.
 
+## Correction: transcription routed through OpenRouter, not OpenAI directly
+
+The original plan called direct OpenAI (`OPENAI_API_KEY`, `api.openai.com`).
+During the real device test (Task 7), voice notes consistently failed with
+"Не вдалося розпізнати голосове." Root-cause testing (calling the
+transcription endpoint directly with the exact key from `.env.local`, using
+a throwaway garbage audio file to isolate auth from audio validity) showed
+OpenAI returned `429 insufficient_quota`: the key authenticates fine, but
+that OpenAI account has no usable billing/credits.
+The same test against `https://openrouter.ai/api/v1/audio/transcriptions`
+with the existing `OPENROUTER_API_KEY` (already funded — it's the account
+behind the working text-parsing feature) returned `400` for the same
+garbage file, i.e. auth and quota both succeeded and only the fake audio
+content was rejected — confirming the fix before writing any code.
+`transcribe.ts` now posts to OpenRouter's endpoint with `model:
+"openai/whisper-1"` and `OPENROUTER_API_KEY`; `OPENAI_API_KEY` is no longer
+used anywhere and was removed from `.env.local.example`. Failure branches
+in `transcribeVoice` now `console.error` the specific reason (missing key,
+download failure with status, non-ok response with body, unexpected
+exception) instead of silently collapsing everything to `null` — the
+original silent-swallow design is exactly what made this take a manual
+reproduction to diagnose instead of a log line.
+
 ## Self-authored decisions (assumptions — user may veto at spec review)
 
-- Transcription model `whisper-1` — matches "OpenAI Whisper API" as stated;
-  swapping to `gpt-4o-mini-transcribe` later is a one-string change in
-  `transcribe.ts` if quality/cost turns out to matter.
-- Plain `fetch()` + `FormData` to OpenAI's `audio/transcriptions` endpoint
-  rather than the `openai` npm package — mirrors the existing hand-rolled
-  `fetch` call to OpenRouter in `parse-task.ts`; one call site doesn't
-  justify an SDK dependency.
-- The downloaded voice file is uploaded to OpenAI named `voice.ogg`
-  (Telegram voice notes are OGG/Opus in an `.oga` container; confirmed via
-  OpenAI's current API reference that `ogg` is an accepted format, so no
-  server-side audio conversion is needed).
+- Transcription model `openai/whisper-1` via OpenRouter (see correction
+  above) — matches "OpenAI Whisper API" as stated (Whisper is still the
+  actual model; OpenRouter is the billing/routing layer, consistent with
+  how the rest of the app's AI calls already work).
+- Plain `fetch()` + `FormData` to the transcription endpoint rather than
+  the `openai` npm package — mirrors the existing hand-rolled `fetch` call
+  to OpenRouter in `parse-task.ts`; one call site doesn't justify an SDK
+  dependency.
+- The downloaded voice file is uploaded named `voice.ogg` (Telegram voice
+  notes are OGG/Opus in an `.oga` container; confirmed via OpenAI's API
+  reference, which OpenRouter's endpoint mirrors, that `ogg` is an accepted
+  format, so no server-side audio conversion is needed).
 - `grammy` is the only new npm dependency this feature adds.
