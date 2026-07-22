@@ -16,6 +16,9 @@ import {
 // "all" shows everything, "none" shows tasks without a project, otherwise a project id.
 export type ProjectFilter = "all" | "none" | string;
 
+// "Виконані" isolate toggle — only wired up on "Всі задачі" (see TaskView).
+export type StatusFilter = "all" | "completed";
+
 interface ProjectFilterBarProps {
   projects: { id: string; name: string }[];
   projectFilter: ProjectFilter;
@@ -25,6 +28,9 @@ interface ProjectFilterBarProps {
   newProjectName: string;
   onNewProjectNameChange: (value: string) => void;
   onCreateProject: (e: React.FormEvent) => void;
+  // Optional — when provided, a "Виконані" chip renders at the end of the row.
+  statusFilter?: StatusFilter;
+  onSelectStatusFilter?: (filter: StatusFilter) => void;
 }
 
 export const chipClass = (isActive: boolean) =>
@@ -47,6 +53,8 @@ export function ProjectFilterBar({
   newProjectName,
   onNewProjectNameChange,
   onCreateProject,
+  statusFilter,
+  onSelectStatusFilter,
 }: ProjectFilterBarProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -218,6 +226,18 @@ export function ProjectFilterBar({
         >
           <FolderOpen className="size-3.5" />
         </Link>
+        {onSelectStatusFilter && (
+          <button
+            type="button"
+            onClick={() =>
+              onSelectStatusFilter(statusFilter === "completed" ? "all" : "completed")
+            }
+            aria-pressed={statusFilter === "completed"}
+            className={chipClass(statusFilter === "completed")}
+          >
+            Виконані
+          </button>
+        )}
       </div>
 
       {isCreatingProject && (

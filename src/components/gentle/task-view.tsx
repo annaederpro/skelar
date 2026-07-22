@@ -3,8 +3,11 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { TaskList } from "@/components/gentle/task-list";
-import { ProjectFilterBar, type ProjectFilter } from "@/components/gentle/project-filter-bar";
-import { TaskStatusFilterBar, type StatusFilter } from "@/components/gentle/task-status-filter-bar";
+import {
+  ProjectFilterBar,
+  type ProjectFilter,
+  type StatusFilter,
+} from "@/components/gentle/project-filter-bar";
 import { EditTaskDialog } from "@/components/gentle/edit-task-dialog";
 import { toggleTaskComplete, createProject, releaseTask, restoreTask } from "@/app/actions";
 import { ReleaseToast } from "@/components/gentle/release-toast";
@@ -142,9 +145,6 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      {isAllTasksTab && (
-        <TaskStatusFilterBar statusFilter={statusFilter} onSelectFilter={setStatusFilter} />
-      )}
       <ProjectFilterBar
         projects={projects}
         projectFilter={projectFilter}
@@ -154,6 +154,8 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
         newProjectName={newProjectName}
         onNewProjectNameChange={setNewProjectName}
         onCreateProject={handleCreateProject}
+        statusFilter={isAllTasksTab ? statusFilter : undefined}
+        onSelectStatusFilter={isAllTasksTab ? setStatusFilter : undefined}
       />
 
       {errorMessage && (
