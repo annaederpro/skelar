@@ -64,7 +64,7 @@ export function AppShell({
   return (
     <ResourceStatusProvider initialResourceStatus={initialResourceStatus}>
       <ProjectsProvider projects={projects}>
-        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+        <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
           <AppHeader openTasks={openTasks} />
           <div className="flex-1 px-4 py-4">{children}</div>
           <BottomNav todayCount={todayCount} />
