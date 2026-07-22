@@ -18,5 +18,14 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   handleUpdate ??= webhookCallback(createBot(), "std/http", { secretToken });
-  return handleUpdate(req);
+  try {
+    return await handleUpdate(req);
+  } catch (err) {
+    // grammY's bot.catch() does not apply in webhook mode (it only fires
+    // from the long-polling path) — this is the actual backstop. Always ack
+    // Telegram so a downstream failure (e.g. a reply that couldn't be sent)
+    // doesn't turn into repeated webhook redeliveries.
+    console.error("telegram webhook handleUpdate failed", err);
+    return new Response(null, { status: 200 });
+  }
 }

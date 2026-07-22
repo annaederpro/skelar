@@ -111,7 +111,7 @@ logic extraction" below — rather than duplicating them.
 | File | Responsibility |
 |---|---|
 | `src/app/api/telegram/webhook/route.ts` | Route Handler. `export const runtime = "nodejs"`. Builds the `Bot` (from `src/lib/telegram/bot.ts`) and returns `webhookCallback(bot, "std/http", { secretToken: process.env.TELEGRAM_WEBHOOK_SECRET })` as `POST`. |
-| `src/lib/telegram/bot.ts` | Constructs the grammY `Bot` from `TELEGRAM_BOT_TOKEN`, registers `/start`, `/link`, `message:voice`, `message:text` handlers and `bot.catch()`. |
+| `src/lib/telegram/bot.ts` | Constructs the grammY `Bot` from `TELEGRAM_BOT_TOKEN`, registers `/start`, `/link`, `message:voice`, `message:text` handlers. |
 | `src/lib/telegram/transcribe.ts` | `transcribeVoice(fileUrl: string): Promise<string \| null>` — downloads the Telegram file, POSTs it to OpenAI's audio transcription endpoint as `voice.ogg` via `fetch`/`FormData`, returns the transcript or `null` on failure. |
 | `src/lib/ai/parse-task-for-user.ts` | `parseTaskForUser(supabase: SupabaseClient, userId: string, rawText: string): Promise<ParseTaskResult>` — extracted from the body of `parseTaskWithAI` (fetch the user's projects, build `todayIso`, call `parseTaskWithOpenRouter`). |
 | `src/lib/tasks/insert-task.ts` | `insertTaskForUser(supabase: SupabaseClient, userId: string, input): Promise<{ task: DbTask } \| { error: string }>` — extracted from the body of `addTask` (project-ownership check + insert with the same field defaults). |
@@ -157,9 +157,18 @@ raw text in hand:
      `"✅ Додано: «Купити молоко» · завтра · 30 хв"`, omitting parts that
      are null (no due date, no non-default priority).
 
-**`bot.catch()`** — logs unhandled exceptions server-side; where a chat id
-is still available, sends `"Щось пішло не так, спробуй ще раз."` (matches
-the tone of existing error strings in `actions.ts`).
+**Route-level error backstop, not `bot.catch()`** — local synthetic testing
+(see Testing) surfaced that grammY's `bot.catch()` is a no-op in webhook
+mode: `webhookCallback` calls `handleUpdate()` (singular) directly, and only
+the long-polling `handleUpdates()` path ever dispatches to the registered
+error handler. An error thrown synchronously in a handler (e.g. `ctx.reply`
+failing) propagates straight out of `webhookCallback`'s returned function.
+The actual backstop is a `try`/`catch` around the `handleUpdate(req)` call
+in `route.ts`, which logs the error and always acks with `200` so a
+downstream failure never turns into a Telegram redelivery loop. The
+`after()` callbacks additionally still catch their own errors internally
+(unchanged from the original design) since that code runs after the route
+handler has already returned.
 
 ## Shared logic extraction
 
@@ -196,7 +205,8 @@ and `addTask`'s signatures, return types, and error strings are unchanged.
 | `parseTaskForUser` returns `{ ok: false }` | `"Не вдалося розібрати задачу з цього тексту."` |
 | `project_id` in parsed result doesn't match a real project | Coerced to `null` — already handled inside `parseTaskWithOpenRouter`, unchanged |
 | Supabase insert fails | `"Щось пішло не так, спробуй ще раз."` |
-| Any unhandled exception in the `after()` callback | Caught by `bot.catch()`, logged, best-effort error reply |
+| Any unhandled exception in the `after()` callback | Caught by that callback's own `try`/`catch`, logged, best-effort error reply |
+| Any unhandled exception in a synchronous handler (`/start`, `/link`, unlinked-chat replies) | Caught by `route.ts`'s `try`/`catch` around `handleUpdate()`, logged, still acks Telegram with `200` |
 | Webhook POST without a valid `secretToken` header | Rejected by grammY's `webhookCallback` before any handler runs |
 
 No failure path leaves the user without a reply — every branch above ends

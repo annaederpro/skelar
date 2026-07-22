@@ -301,7 +301,7 @@ git commit --no-gpg-sign -m "feat: add Whisper transcription helper for Telegram
 
 Design notes the implementer must not "fix":
 - Handler order matters: `bot.command(...)` registrations come before `bot.on("message:voice")`/`bot.on("message:text")`, so commands never fall through into task parsing. Unknown `/commands` are filtered in the text handler.
-- The `after()` callback gets its own `try`/`catch`. `bot.catch()` only covers the inline middleware chain — it cannot see errors thrown after the response is sent, so the deferred pipeline must catch, log, and best-effort-reply itself.
+- The `after()` callback gets its own `try`/`catch`. `bot.catch()` is a no-op in webhook mode — grammY's `webhookCallback` calls `handleUpdate()` (singular) directly, and only the long-polling `handleUpdates()` path ever dispatches to a registered error handler (confirmed by reading `node_modules/grammy/out/bot.js` during Task 6 verification, after a synthetic test produced an unhandled 500). Don't register `bot.catch()` here — it would be dead code. The real backstop for synchronous handler errors is the `try`/`catch` in `route.ts` (Task 5); the deferred `after()` pipeline needs its own catch regardless, since that code runs after the route handler has already returned.
 - Replies inside `after()` use `ctx.api.sendMessage(chatId, ...)` with the saved numeric `chatId`, not `ctx.reply(...)` — plain data captured before deferring, per the spec's "capture what's needed into plain variables" rule.
 - `telegram_chat_id` is a `text` column; always compare/store `String(chat.id)`.
 
@@ -511,9 +511,11 @@ export function createBot(): Bot {
     });
   });
 
-  bot.catch((err) => {
-    console.error("telegram bot error", err.error, "update:", err.ctx.update.update_id);
-  });
+  // bot.catch() is intentionally not used here — grammY only routes through
+  // it from the long-polling handleUpdates() path. In webhook mode,
+  // webhookCallback calls handleUpdate() directly, whose errors propagate to
+  // the caller uncaught. route.ts (Task 5) is what actually guards against a
+  // thrown error here becoming an unhandled 500.
 
   return bot;
 }
@@ -567,7 +569,16 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   handleUpdate ??= webhookCallback(createBot(), "std/http", { secretToken });
-  return handleUpdate(req);
+  try {
+    return await handleUpdate(req);
+  } catch (err) {
+    // grammY's bot.catch() does not apply in webhook mode (it only fires
+    // from the long-polling path) — this is the actual backstop. Always ack
+    // Telegram so a downstream failure (e.g. a reply that couldn't be sent)
+    // doesn't turn into repeated webhook redeliveries.
+    console.error("telegram webhook handleUpdate failed", err);
+    return new Response(null, { status: 200 });
+  }
 }
 ```
 

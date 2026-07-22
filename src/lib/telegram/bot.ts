@@ -202,9 +202,11 @@ export function createBot(): Bot {
     });
   });
 
-  bot.catch((err) => {
-    console.error("telegram bot error", err.error, "update:", err.ctx.update.update_id);
-  });
+  // Note: bot.catch() is intentionally not used here — grammY only routes
+  // through it from the long-polling handleUpdates() path. In webhook mode,
+  // webhookCallback calls handleUpdate() directly, whose errors propagate to
+  // the caller uncaught. The route handler (route.ts) is what actually
+  // guards against a thrown error here becoming an unhandled 500.
 
   return bot;
 }
