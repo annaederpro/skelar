@@ -43,6 +43,10 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   // already excludes completed tasks at the query level, and /browse's
   // project pages keep their existing created_at order.
   const isAllTasksTab = pathname === "/inbox";
+  // Сьогодні only ever shows active tasks — completed tasks live in "Всі
+  // задачі" instead — so checking one off here removes it immediately
+  // rather than leaving it checked in place until the next refresh.
+  const isTodayTab = pathname === "/today";
 
   // Keep in sync with the server data whenever it's re-fetched (e.g. a
   // router.refresh() triggered by completing a task elsewhere, like Focus
@@ -84,12 +88,22 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
 
   const handleToggleComplete = (task: DbTask) => {
     const nextStatus = task.status === "completed" ? "todo" : "completed";
-    setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
+    const removeOnComplete = isTodayTab && nextStatus === "completed";
+
+    if (removeOnComplete) {
+      setTasks((prev) => prev.filter((t) => t.id !== task.id));
+    } else {
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
+    }
     setErrorMessage(null);
     startTransition(async () => {
       const result = await toggleTaskComplete(task.id, nextStatus);
       if ("error" in result) {
-        setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: task.status } : t)));
+        if (removeOnComplete) {
+          setTasks((prev) => [...prev, task]);
+        } else {
+          setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: task.status } : t)));
+        }
         setErrorMessage(result.error);
         return;
       }

@@ -92,14 +92,18 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
     }
   };
 
+  // Незабаром's query already excludes completed tasks (see upcoming/page.tsx),
+  // so every task here starts as "todo" — checking one off always means
+  // "completed", and it should disappear immediately rather than sit
+  // checked in place until the next refresh (completed tasks live in "Всі
+  // задачі" instead).
   const handleToggleComplete = (task: DbTask) => {
-    const nextStatus = task.status === "completed" ? "todo" : "completed";
-    setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
+    setTasks((prev) => prev.filter((t) => t.id !== task.id));
     setErrorMessage(null);
     startTransition(async () => {
-      const result = await toggleTaskComplete(task.id, nextStatus);
+      const result = await toggleTaskComplete(task.id, "completed");
       if ("error" in result) {
-        setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: task.status } : t)));
+        setTasks((prev) => [...prev, task]);
         setErrorMessage(result.error);
         return;
       }
@@ -178,7 +182,7 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
         <>
           {overdueTasks.length > 0 && (
             <section id="overdue-section" className="flex flex-col gap-2">
-              <h2 className="px-1 text-[13px] font-bold text-coral">Прострочено</h2>
+              <h2 className="px-1 text-[13px] font-bold text-coral">Відкладено</h2>
               <TaskList
                 tasks={overdueTasks}
                 projectNameById={projectNameById}

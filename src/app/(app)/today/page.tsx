@@ -18,6 +18,7 @@ export default async function TodayPage() {
     .eq("user_id", userId)
     .is("released_at", null)
     .eq("due_date", today)
+    .neq("status", "completed")
     .order("due_time", { ascending: true, nullsFirst: true })
     .order("created_at", { ascending: false });
 
