@@ -10,6 +10,9 @@ function pluralizeMeshkanets(n: number): string {
   return "мешканців";
 }
 
+// Fixed swim lanes are capped at 8 (see AquariumTank) so at most 8 swimmers render.
+const MAX_SWIMMERS = 8;
+
 export default async function AquariumPage() {
   const supabase = await createClient();
   const {
@@ -48,6 +51,7 @@ export default async function AquariumPage() {
 
   const unlocked = SPECIES.filter((s) => fish >= s.threshold);
   const nextSpecies = SPECIES.find((s) => fish < s.threshold);
+  const swimmerCount = Math.min(fish, MAX_SWIMMERS);
 
   return (
     <div className="flex flex-col gap-4">
@@ -74,7 +78,7 @@ export default async function AquariumPage() {
         </div>
       </div>
 
-      <AquariumTank eggs={eggs} unlocked={unlocked} completedCount={fish} />
+      <AquariumTank eggs={eggs} unlocked={unlocked} swimmerCount={swimmerCount} />
 
       {/* collection */}
       <div>

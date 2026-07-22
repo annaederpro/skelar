@@ -32,10 +32,6 @@ interface TaskFieldsFormProps {
   dueTime: string;
   onDueTimeChange: (value: string) => void;
   projects: DbProject[];
-  // When true, everything past the title starts tucked behind a "Деталі"
-  // disclosure instead of rendering open — used for the AI-capture review
-  // step so a good parse only asks for one confirmation, not six fields.
-  collapsibleDetails?: boolean;
 }
 
 const ENERGY_OPTIONS: EnergyLevel[] = [1, 2, 3];
@@ -63,15 +59,20 @@ export function TaskFieldsForm({
   dueTime,
   onDueTimeChange,
   projects,
-  collapsibleDetails = false,
 }: TaskFieldsFormProps) {
   const activeBucket = priorityBucket(priority);
   // Time input starts revealed only when the task already has a time.
   const [isTimeExpanded, setIsTimeExpanded] = useState(dueTime !== "");
-  const [detailsOpen, setDetailsOpen] = useState(!collapsibleDetails);
 
-  const detailsFields = (
+  return (
     <>
+      <Input
+        placeholder="Що потрібно зробити?"
+        value={title}
+        onChange={(e) => onTitleChange(e.target.value)}
+        autoFocus
+      />
+
       {/* effort (energy) */}
       <div className="flex items-center gap-1.5">
         {ENERGY_OPTIONS.map((level) => {
@@ -222,40 +223,6 @@ export function TaskFieldsForm({
             </button>
           )}
         </div>
-      )}
-    </>
-  );
-
-  return (
-    <>
-      <Input
-        placeholder="Що потрібно зробити?"
-        value={title}
-        onChange={(e) => onTitleChange(e.target.value)}
-        autoFocus
-      />
-
-      {collapsibleDetails && !detailsOpen ? (
-        <button
-          type="button"
-          onClick={() => setDetailsOpen(true)}
-          className="self-start text-xs font-bold text-sea-deep hover:underline"
-        >
-          Деталі →
-        </button>
-      ) : (
-        <>
-          {detailsFields}
-          {collapsibleDetails && (
-            <button
-              type="button"
-              onClick={() => setDetailsOpen(false)}
-              className="self-start text-xs font-bold text-ink-soft hover:text-ink"
-            >
-              Сховати деталі
-            </button>
-          )}
-        </>
       )}
     </>
   );
