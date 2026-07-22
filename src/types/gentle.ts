@@ -128,3 +128,35 @@ export const PRIORITY_BUCKET_BAR_CLASS: Record<PriorityBucket, string> = {
   mid: "bg-transparent",
   low: "bg-transparent",
 };
+
+// ── "Всі задачі" sort: importance first, then due date, completed last ──
+// One comparator serves both the default view (active tasks grouped
+// Важливо → Звичайне → Колись, completed tasks last, same internal
+// grouping) and the isolated "Виконані" filter (list pre-filtered to
+// status === "completed", so the status key below becomes a no-op
+// tiebreaker and completed tasks still sort Важливо → Звичайне → Колись).
+const PRIORITY_BUCKET_RANK: Record<PriorityBucket, number> = { high: 0, mid: 1, low: 2 };
+
+export function compareTasksForAllTasksTab(a: DbTask, b: DbTask): number {
+  const statusDiff = Number(a.status === "completed") - Number(b.status === "completed");
+  if (statusDiff !== 0) return statusDiff;
+
+  const bucketDiff =
+    PRIORITY_BUCKET_RANK[priorityBucket(a.priority)] - PRIORITY_BUCKET_RANK[priorityBucket(b.priority)];
+  if (bucketDiff !== 0) return bucketDiff;
+
+  // Nearest due date first; no due date sorts to the end of the group.
+  if (a.due_date !== b.due_date) {
+    if (a.due_date === null) return 1;
+    if (b.due_date === null) return -1;
+    return a.due_date < b.due_date ? -1 : 1;
+  }
+
+  if (a.due_time !== b.due_time) {
+    if (a.due_time === null) return 1;
+    if (b.due_time === null) return -1;
+    return a.due_time < b.due_time ? -1 : 1;
+  }
+
+  return 0; // stable sort preserves existing relative (fetch) order
+}
