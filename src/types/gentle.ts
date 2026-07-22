@@ -11,6 +11,10 @@ export interface DbUser {
   email: string;
   current_resource_status: ResourceStatus;
   telegram_chat_id: string | null;
+  // Added by migration 0006 (per-user Telegram linking). Non-null only
+  // while a generated code is awaiting use; cleared on successful link.
+  telegram_link_code: string | null;
+  telegram_link_code_expires_at: string | null;
   created_at: string;
 }
 
