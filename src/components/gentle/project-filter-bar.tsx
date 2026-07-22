@@ -210,6 +210,18 @@ export function ProjectFilterBar({
             )}
           </>
         )}
+        {onSelectStatusFilter && (
+          <button
+            type="button"
+            onClick={() =>
+              onSelectStatusFilter(statusFilter === "completed" ? "all" : "completed")
+            }
+            aria-pressed={statusFilter === "completed"}
+            className={chipClass(statusFilter === "completed")}
+          >
+            Виконані
+          </button>
+        )}
         <button
           type="button"
           onClick={onToggleCreating}
@@ -226,18 +238,6 @@ export function ProjectFilterBar({
         >
           <FolderOpen className="size-3.5" />
         </Link>
-        {onSelectStatusFilter && (
-          <button
-            type="button"
-            onClick={() =>
-              onSelectStatusFilter(statusFilter === "completed" ? "all" : "completed")
-            }
-            aria-pressed={statusFilter === "completed"}
-            className={chipClass(statusFilter === "completed")}
-          >
-            Виконані
-          </button>
-        )}
       </div>
 
       {isCreatingProject && (
