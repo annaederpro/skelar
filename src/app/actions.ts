@@ -179,6 +179,50 @@ export async function toggleTaskComplete(
   return { ok: true };
 }
 
+export async function releaseTask(taskId: string): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({ released_at: new Date().toISOString() })
+    .eq("id", taskId);
+
+  if (error) {
+    return { error: "Не вдалося оновити задачу." };
+  }
+
+  return { ok: true };
+}
+
+export async function restoreTask(taskId: string): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({ released_at: null })
+    .eq("id", taskId);
+
+  if (error) {
+    return { error: "Не вдалося оновити задачу." };
+  }
+
+  return { ok: true };
+}
+
 export async function updateResourceStatus(
   status: ResourceStatus,
 ): Promise<{ ok: true } | { error: string }> {
