@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Check, Folder, CalendarDays } from "lucide-react";
+import { Clock, Check, Folder, CalendarDays, Waves, Undo2 } from "lucide-react";
 import type { DbTask, EnergyLevel } from "@/types/gentle";
 import {
   EFFORT_WORD,
@@ -17,8 +17,10 @@ import { cn } from "@/lib/utils";
 interface TaskCardProps {
   task: DbTask;
   projectName?: string;
+  variant?: "active" | "released";
   onToggleComplete?: (task: DbTask) => void;
   onEdit?: (task: DbTask) => void;
+  onRestore?: (task: DbTask) => void;
 }
 
 // "2026-07-22" → "22.07"
@@ -46,12 +48,21 @@ function EffortDots({ level }: { level: EnergyLevel }) {
   );
 }
 
-export function TaskCard({ task, projectName, onToggleComplete, onEdit }: TaskCardProps) {
+export function TaskCard({
+  task,
+  projectName,
+  variant = "active",
+  onToggleComplete,
+  onEdit,
+  onRestore,
+}: TaskCardProps) {
   const isCompleted = task.status === "completed";
   const bucket = priorityBucket(task.priority);
   const isSeeded = task.is_seeded && !isCompleted;
   const isDueUrgent =
     !isCompleted && task.due_date !== null && task.due_date <= getAppToday();
+  const isReleased = variant === "released";
+  const isEditable = Boolean(onEdit) && !isReleased;
 
   return (
     <div
@@ -70,31 +81,44 @@ export function TaskCard({ task, projectName, onToggleComplete, onEdit }: TaskCa
         aria-hidden
       />
 
-      <button
-        type="button"
-        onClick={() => onToggleComplete?.(task)}
-        className={cn(
-          "flex size-[26px] shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-          isCompleted
-            ? "border-sea bg-sea text-white"
-            : "border-ink-soft/30 text-transparent hover:border-sea",
-        )}
-        aria-label={isCompleted ? "Позначити як невиконану" : "Позначити як виконану"}
-      >
-        <Check className="size-[14px]" strokeWidth={3.5} />
-      </button>
+      {isReleased ? (
+        <span
+          className="flex size-[26px] shrink-0 items-center justify-center rounded-full border-2 border-line text-ink-soft/50"
+          aria-hidden
+        >
+          <Waves className="size-[13px]" />
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onToggleComplete?.(task)}
+          className={cn(
+            "flex size-[26px] shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+            isCompleted
+              ? "border-sea bg-sea text-white"
+              : "border-ink-soft/30 text-transparent hover:border-sea",
+          )}
+          aria-label={isCompleted ? "Позначити як невиконану" : "Позначити як виконану"}
+        >
+          <Check className="size-[14px]" strokeWidth={3.5} />
+        </button>
+      )}
 
       <div
-        className="min-w-0 flex-1 cursor-pointer"
-        role="button"
-        tabIndex={onEdit ? 0 : -1}
-        onClick={() => onEdit?.(task)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onEdit?.(task);
-          }
-        }}
+        className={cn("min-w-0 flex-1", isEditable && "cursor-pointer")}
+        role={isEditable ? "button" : undefined}
+        tabIndex={isEditable ? 0 : -1}
+        onClick={isEditable ? () => onEdit?.(task) : undefined}
+        onKeyDown={
+          isEditable
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onEdit?.(task);
+                }
+              }
+            : undefined
+        }
       >
         <div className="flex items-center gap-2">
           <span
@@ -149,6 +173,17 @@ export function TaskCard({ task, projectName, onToggleComplete, onEdit }: TaskCa
           )}
         </div>
       </div>
+
+      {isReleased && (
+        <button
+          type="button"
+          onClick={() => onRestore?.(task)}
+          className="flex shrink-0 items-center gap-1 rounded-full bg-sea-soft px-2.5 py-1.5 text-[11.5px] font-bold text-sea-deep transition-colors hover:bg-sea-soft/70"
+        >
+          <Undo2 className="size-3.5" />
+          Повернути
+        </button>
+      )}
     </div>
   );
 }
