@@ -30,6 +30,7 @@ export default async function ProjectPage({
     .from("tasks")
     .select("*")
     .eq("user_id", userId)
+    .is("released_at", null)
     .eq("project_id", projectId)
     .order("created_at", { ascending: false });
 

@@ -25,11 +25,13 @@ export default async function AquariumPage() {
       .from("tasks")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
+      .is("released_at", null)
       .eq("status", "completed"),
     supabase
       .from("tasks")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
+      .is("released_at", null)
       .eq("status", "todo")
       .eq("is_seeded", true),
   ]);

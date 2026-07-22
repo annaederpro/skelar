@@ -13,6 +13,7 @@ export default async function UpcomingPage() {
     .from("tasks")
     .select("*")
     .eq("user_id", userId)
+    .is("released_at", null)
     .not("due_date", "is", null)
     .neq("status", "completed")
     .order("due_date", { ascending: true })

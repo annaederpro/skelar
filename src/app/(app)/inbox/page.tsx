@@ -21,6 +21,7 @@ export default async function InboxPage() {
     .from("tasks")
     .select("*")
     .eq("user_id", userId)
+    .is("released_at", null)
     .order("created_at", { ascending: false });
 
   const today = getAppToday();

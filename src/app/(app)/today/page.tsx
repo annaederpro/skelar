@@ -16,6 +16,7 @@ export default async function TodayPage() {
     .from("tasks")
     .select("*")
     .eq("user_id", userId)
+    .is("released_at", null)
     .eq("due_date", today)
     .order("due_time", { ascending: true, nullsFirst: true })
     .order("created_at", { ascending: false });

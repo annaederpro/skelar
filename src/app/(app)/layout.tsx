@@ -27,6 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         .from("tasks")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
+        .is("released_at", null)
         .eq("due_date", today)
         .neq("status", "completed"),
       // Full open-task pool for the cross-cutting Focus suggestion — not
@@ -36,6 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         .from("tasks")
         .select("*")
         .eq("user_id", userId)
+        .is("released_at", null)
         .neq("status", "completed")
         .order("created_at", { ascending: false })
         .limit(300),
