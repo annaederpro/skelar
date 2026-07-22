@@ -166,6 +166,19 @@ export default async function AquariumPage() {
             <span>Усі види зібрано. Твій риф — повний життя.</span>
           </div>
         )}
+
+        <p className="mt-3 text-center text-[10.5px] text-ink-soft">
+          Іконки частково —{" "}
+          <a
+            href="https://github.com/jdecked/twemoji"
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-2"
+          >
+            Twemoji
+          </a>{" "}
+          · CC-BY 4.0
+        </p>
       </div>
     </div>
   );
