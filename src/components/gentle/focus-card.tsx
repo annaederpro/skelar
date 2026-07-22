@@ -85,7 +85,7 @@ export function FocusCard({ tasks }: FocusCardProps) {
     const today = getAppToday();
     const parts: string[] = [];
     if (suggested.due_date !== null && suggested.due_date < today) {
-      parts.push("🔥 Прострочено — варто взятись");
+      parts.push("🔥 Відкладено — варто взятись");
     } else if (suggested.due_date === today) {
       parts.push("🔥 Дедлайн сьогодні");
     }
