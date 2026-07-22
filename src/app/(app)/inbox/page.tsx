@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getAppToday } from "@/lib/date";
 import { TaskView } from "@/components/gentle/task-view";
@@ -40,6 +42,18 @@ export default async function InboxPage() {
   });
 
   return (
-    <TaskView initialTasks={sortedTasks as DbTask[]} emptyMessage="Всі задачі порожні. Гарний знак 🌿" />
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-heading text-xl font-semibold">Всі задачі</h2>
+        <Link
+          href="/trash"
+          className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-[12.5px] font-bold text-ink-soft transition-colors hover:bg-muted/70"
+        >
+          <Trash2 className="size-3.5" />
+          Кошик
+        </Link>
+      </div>
+      <TaskView initialTasks={sortedTasks as DbTask[]} emptyMessage="Всі задачі порожні. Гарний знак 🌿" />
+    </div>
   );
 }
