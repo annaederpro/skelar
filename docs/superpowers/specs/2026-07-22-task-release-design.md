@@ -13,17 +13,21 @@ untouched for weeks.
 This spec adds a soft-delete "release" action, framed through the app's
 existing ocean/aquarium metaphor (fish for completed tasks, eggs for
 in-progress Focus sessions — see `celebration-modal.tsx`): letting go of a
-task sends it into "Безодня" (the Abyss/trash), recoverable at any time, with
-a compassionate message instead of a confirmation dialog.
+task sends it into the trash, recoverable at any time, with a compassionate
+message instead of a confirmation dialog. The "Безодня" (abyss) framing
+shows up in that moment's copy; the trash itself is labeled plainly —
+**"Кошик"** — everywhere it appears as a navigation target.
 
 ## Decisions locked with the user before writing this spec
 
 - **Trigger**: full swipe on a `TaskCard` in any task list (Сьогодні,
   Незабаром, Всі задачі, project pages) — one continuous gesture, no
-  secondary confirm tap.
+  secondary confirm tap. **Either direction** (left or right) triggers
+  release; the threshold is on absolute horizontal distance, not a
+  specific direction.
 - **Immediacy**: the swipe releases the task instantly (no confirmation
   dialog). Safety comes from two recovery paths instead: an undo toast
-  right after, and a permanent "Безодня" trash view.
+  right after, and a permanent trash view.
 - **Undo**: a toast appears after release with the app's thank-you copy and
   an **Скасувати** (Undo) button, auto-dismissing after ~5s. Undo calls the
   *same* restore action the trash page uses — one restore path, not two.
@@ -31,12 +35,18 @@ a compassionate message instead of a confirmation dialog.
   vertical space is already tight — see `672a174`). A small link from the
   "Всі задачі" (Inbox) page header instead, at its own route so it isn't
   bottom-nav-gated.
-- **Copy** (fixed by the user): *"Це нормально — змінювати плани. Ти
-  звільнив місце для чогось важливішого."*
+- **Naming split**: the nav entry point and page title stay plain —
+  **"Кошик"** (Trash) — so it reads clearly in a menu. The "Безодня"
+  (abyss) framing lives only in the release-moment copy itself (the toast),
+  not as a UI label anyone has to parse while navigating.
+- **Copy** (fixed by the user): the toast leads with a short abyss-themed
+  line, then the original fixed compassion line: *"Пішло в безодню 🌊"* /
+  *"Це нормально — змінювати плани. Ти звільнив місце для чогось
+  важливішого."*
 
 ## Non-goals (this pass)
 
-- Hard/permanent delete. Released tasks stay in "Безодня" indefinitely —
+- Hard/permanent delete. Released tasks stay in "Кошик" indefinitely —
   no auto-purge job, no "empty trash" button. (Cheap to add later; not
   asked for.)
 - Any change to `deleteProject` or project-level deletion.
@@ -86,7 +96,7 @@ way `status`/`is_seeded` filters already scope these queries:
 | `src/app/(app)/aquarium/page.tsx` | both queries (swimmer count + eggs) |
 | `src/app/(app)/layout.tsx` | both queries (Focus pool + today count) |
 
-The new "Безодня" page queries the inverse: `.not("released_at", "is", null)`.
+The new "Кошик" page queries the inverse: `.not("released_at", "is", null)`.
 
 `insertTaskForUser` (`src/lib/tasks/insert-task.ts`) needs no change —
 new tasks are never created with `released_at` set.
@@ -124,13 +134,14 @@ wrapping a single `TaskCard` (used inside `TaskList`, not the trash list):
 
 - Tracks a horizontal drag via `onPointerDown`/`onPointerMove`/`onPointerUp`
   on a wrapper div; translates the card with `transform: translateX()`
-  during the drag (no library — same primitive-CSS approach the rest of
-  the app already uses, e.g. `focus-session-modal.tsx`'s hand-rolled ring
-  timer).
-- Crossing a distance threshold (a fraction of the card's own width, so it
-  scales with card/viewport size rather than a fixed pixel count) on
-  release commits to the swipe; anything short of that springs back to
-  `translateX(0)` via a CSS transition.
+  during the drag, in whichever direction the pointer moves (no library —
+  same primitive-CSS approach the rest of the app already uses, e.g.
+  `focus-session-modal.tsx`'s hand-rolled ring timer).
+- Crossing a distance threshold on **either side** — `Math.abs(deltaX)`
+  past a fraction of the card's own width, so it scales with card/viewport
+  size rather than a fixed pixel count — on release commits to the swipe;
+  anything short of that springs back to `translateX(0)` via a CSS
+  transition, regardless of which direction it was dragged.
 - On commit: plays a ~400–500ms release animation in place of the card —
   bubbles rising (reusing the `.aq-bubble` keyframe from
   `aquarium-tank.tsx`) over a soft teal glow, then the row's height
@@ -139,6 +150,11 @@ wrapping a single `TaskCard` (used inside `TaskList`, not the trash list):
   touch task state itself — that stays in `TaskView`, matching how
   `TaskList` already stays presentational and pushes state changes up via
   callbacks (`onToggleComplete`, `onEditTask`).
+
+- On commit, the card continues gliding off in the direction it was
+  already moving (left exits left, right exits right) while the bubbles/
+  glow play over it — the exit direction is just a continuation of the
+  gesture, not a separate decision the code has to make.
 
 **`TaskView`** (`src/components/gentle/task-view.tsx`) gains a
 `handleRelease(task)`, following the exact optimistic-update-then-revert
@@ -161,17 +177,21 @@ task while one toast is showing replaces it, matching the single-task
 undo the feature was asked for). Rendered from `TaskView`, positioned as a
 fixed bar above `BottomNav`.
 
-- Content: the fixed copy — *"Це нормально — змінювати плани. Ти звільнив
-  місце для чогось важливішого."* — plus **Скасувати**.
+- Content: a short abyss-themed lead line, then the fixed compassion
+  copy — *"Пішло в безодню 🌊"* / *"Це нормально — змінювати плани. Ти
+  звільнив місце для чогось важливішого."* — plus **Скасувати**. (The
+  "abyss" wording lives only here, in the moment; the trash itself is
+  never labeled "Безодня" anywhere the user navigates to it — see Naming
+  split above.)
 - Auto-dismisses after 5s (a `setTimeout`, cleared on unmount/replacement).
 - **Скасувати** calls `restoreTask(taskId)`, then `router.refresh()` and
   clears the toast. This is the exact same call the trash page's
   **Повернути** button makes — no separate "undo" code path.
 - After the toast dismisses (timeout or explicit undo), the task is not
-  gone forever either way — it's simply in "Безодня" until manually
+  gone forever either way — it's simply in "Кошик" until manually
   restored from there.
 
-## UI: "Безодня" (trash) page
+## UI: "Кошик" (trash) page
 
 New route, `src/app/(app)/trash/page.tsx` — outside the bottom nav, linked
 via a small icon button in the "Всі задачі" inbox page's header (next to
@@ -187,8 +207,9 @@ existing header content in `inbox/page.tsx`/`task-view.tsx`).
 - Empty state copy in the same voice as other empty states (e.g. inbox's
   "Всі задачі порожні. Гарний знак 🌿"): something like *"Тут поки
   порожньо — жодної відпущеної задачі."*
-- Page title "Безодня", subtitle explaining what it is (e.g. "Задачі, які
-  ти відпустив — вони чекають тут, якщо захочеш повернутись").
+- Page title "Кошик", plain — no abyss wording here (see Naming split).
+  Subtitle explaining what it is (e.g. "Задачі, які ти відпустив — вони
+  чекають тут, якщо захочеш повернутись").
 
 ## Error handling
 
@@ -197,7 +218,7 @@ existing header content in `inbox/page.tsx`/`task-view.tsx`).
 | `releaseTask` fails (network/DB) | Task reappears in its list, coral error banner (existing `TaskView` pattern) |
 | `restoreTask` fails (from toast or trash) | Toast/trash row stays as-is, coral error banner |
 | Swipe released short of the threshold | Card springs back, no server call |
-| Releasing a second task while a toast is showing | New toast replaces the old one; the first task is still released (not undoable via toast anymore, but still recoverable from Безодня) |
+| Releasing a second task while a toast is showing | New toast replaces the old one; the first task is still released (not undoable via toast anymore, but still recoverable from Кошик) |
 | User closes/reloads the tab before the toast times out | No effect — `released_at` was already persisted on release, not on toast expiry |
 
 ## Testing
@@ -209,8 +230,8 @@ verification, as in the other specs under `docs/superpowers/specs/`):
    collapses, toast appears, task gone from Сьогодні/Незабаром/Inbox/
    Aquarium's Focus pool.
 2. Tap **Скасувати** within 5s → task reappears in its original list.
-3. Let the toast expire, then open "Безодня" → task is listed; tap
-   **Повернути** → task reappears in its original list, "Безодня" no
+3. Let the toast expire, then open "Кошик" → task is listed; tap
+   **Повернути** → task reappears in its original list, "Кошик" no
    longer shows it.
 4. Release a `completed` task → restore it → confirm it comes back
    *completed*, not reset to `todo` (validates the "no status juggling"
@@ -225,8 +246,6 @@ verification, as in the other specs under `docs/superpowers/specs/`):
 
 ## Self-authored decisions (assumptions — user may veto at spec review)
 
-- Swipe direction: left (matches the near-universal "swipe left to
-  remove/archive" convention from Mail/Gmail-style apps).
 - Swipe threshold: distance-based (fraction of card width) rather than
   velocity-based fling detection — simpler to implement correctly with
   plain pointer events, and this is a deliberate "let go" gesture rather
@@ -235,7 +254,7 @@ verification, as in the other specs under `docs/superpowers/specs/`):
   the list), not a full-screen modal like `CelebrationModal` — releasing a
   task is a lighter, quieter action than finishing a Focus session, and a
   blocking modal would work against the "no friction" intent.
-- "Безодня" is reachable only via a header link from Inbox, not from
+- "Кошик" is reachable only via a header link from Inbox, not from
   Today/Upcoming/project pages too — keeps it to one discoverable place
   rather than repeating the link everywhere.
 - `TaskCard`'s new `variant="released"` mode is a prop addition to the
