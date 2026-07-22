@@ -37,6 +37,9 @@ export interface DbTask {
   due_time: string | null;
   // Added by migration 0003 (Phase 2 — Focus). Absent/false until then.
   is_seeded: boolean;
+  // Added by migration 0005 (Task Release). Null = active task; set = soft-
+  // deleted, recoverable from "Кошик" until restored (released_at cleared).
+  released_at: string | null;
 }
 
 // "25" → "25 хв", "180" → "3 год", "90" → "1 год 30 хв"
