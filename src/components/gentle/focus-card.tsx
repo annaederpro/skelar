@@ -54,8 +54,13 @@ export function FocusCard({ tasks }: FocusCardProps) {
     // Due today or overdue outranks everything, then priority, then the
     // nearest deadline, then the quickest task as a gentle tiebreaker.
     const isUrgent = (t: DbTask) => (t.due_date !== null && t.due_date <= today ? 1 : 0);
+    // Important + due today/overdue breaks through the energy cap — a hard
+    // task that actually matters today shouldn't get hidden just because
+    // it needs more energy than the user currently has. Time budget still
+    // applies: it must fit in the window they picked.
+    const isImportantAndUrgent = (t: DbTask) => isUrgent(t) === 1 && priorityBucket(t.priority) === "high";
     return tasks
-      .filter((t) => t.energy_level <= energy && t.duration_minutes <= selectedMin)
+      .filter((t) => (t.energy_level <= energy || isImportantAndUrgent(t)) && t.duration_minutes <= selectedMin)
       .sort((a, b) => {
         const urgency = isUrgent(b) - isUrgent(a);
         if (urgency !== 0) return urgency;

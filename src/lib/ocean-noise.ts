@@ -15,6 +15,7 @@ export function useOceanNoise() {
   const gainRef = useRef<GainNode | null>(null);
   const lfoRef = useRef<OscillatorNode | null>(null);
   const wantsPlayingRef = useRef(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const stop = () => {
     wantsPlayingRef.current = false;
@@ -26,6 +27,7 @@ export function useOceanNoise() {
     sourceRef.current = null;
     lfoRef.current = null;
     gainRef.current = null;
+    videoRef.current?.pause();
     setIsPlaying(false);
   };
 
@@ -35,11 +37,29 @@ export function useOceanNoise() {
     ctxRef.current = ctx;
     setIsPlaying(true);
 
-    // Mobile/iOS browsers only unlock audio playback when resume() runs
-    // synchronously from a user gesture *and* the caller awaits it before
-    // starting any node — the previous fire-and-forget resume() left the
-    // context suspended and produced no sound on those browsers.
-    await ctx.resume();
+    if (!videoRef.current) {
+      const video = document.createElement("video");
+      video.playsInline = true;
+      video.muted = false;
+      video.setAttribute("aria-hidden", "true");
+      video.style.cssText = "position:fixed;width:0;height:0;opacity:0;pointer-events:none";
+      document.body.appendChild(video);
+      videoRef.current = video;
+    }
+
+    // iOS Safari's hardware ring/silent switch mutes raw AudioContext (and
+    // <audio>) output, but not <video> element audio — a different audio
+    // session category. Routing the graph through a hidden <video> instead
+    // of ctx.destination keeps the noise audible with the switch on silent.
+    const streamDest = ctx.createMediaStreamDestination();
+    videoRef.current.srcObject = streamDest.stream;
+
+    // Mobile/iOS browsers only unlock audio playback when resume() (and,
+    // here, video.play()) run synchronously from a user gesture *and* the
+    // caller awaits them before starting any node — running both together
+    // keeps play() inside the same gesture instead of losing it behind an
+    // already-awaited resume().
+    await Promise.all([ctx.resume(), videoRef.current.play().catch(() => {})]);
     if (!wantsPlayingRef.current) return; // toggled off again while resuming
 
     // 2 seconds of noise, looped — generated once and reused across toggles.
@@ -75,7 +95,7 @@ export function useOceanNoise() {
 
     source.connect(filter);
     filter.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(streamDest);
 
     source.start();
     lfo.start();
@@ -94,6 +114,8 @@ export function useOceanNoise() {
     return () => {
       stop();
       void ctxRef.current?.close();
+      videoRef.current?.remove();
+      videoRef.current = null;
     };
   }, []);
 
