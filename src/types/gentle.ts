@@ -15,6 +15,8 @@ export interface DbUser {
   // while a generated code is awaiting use; cleared on successful link.
   telegram_link_code: string | null;
   telegram_link_code_expires_at: string | null;
+  // Added by migration 0007. Null means the user hasn't set a name yet.
+  display_name: string | null;
   created_at: string;
 }
 
