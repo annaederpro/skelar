@@ -123,6 +123,7 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
 
   return (
     <div className="flex flex-col gap-2">
+      <WeekStrip today={today} busyDates={busyDates} onSelectDate={handleSelectDate} />
       <ProjectFilterBar
         projects={projects}
         projectFilter={projectFilter}
@@ -133,7 +134,6 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
         onNewProjectNameChange={setNewProjectName}
         onCreateProject={handleCreateProject}
       />
-      <WeekStrip today={today} busyDates={busyDates} onSelectDate={handleSelectDate} />
       {errorMessage && (
         <p className="rounded-xl bg-coral-soft/60 px-3 py-2 text-center text-sm text-coral">
           {errorMessage}

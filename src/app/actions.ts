@@ -278,6 +278,33 @@ export async function createProject(
   return { project: data as DbProject };
 }
 
+export async function deleteProject(
+  projectId: string,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  // Tasks in this project keep their history — the FK is ON DELETE SET NULL,
+  // so they fall back to "Без проєкту" instead of being removed.
+  const { error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", projectId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { error: "Не вдалося видалити проєкт, спробуй ще раз." };
+  }
+
+  return { ok: true };
+}
+
 export async function parseTaskWithAI(rawText: string): Promise<ParseTaskResult> {
   const supabase = await createClient();
   const {
