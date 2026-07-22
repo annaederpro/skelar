@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ParseTaskResult } from "@/lib/ai/parse-task";
 import { parseTaskForUser } from "@/lib/ai/parse-task-for-user";
 import { insertTaskForUser } from "@/lib/tasks/insert-task";
+import { generateLinkCode, LINK_CODE_TTL_MINUTES } from "@/lib/telegram/link-code";
 import type {
   DbProject,
   DbTask,
@@ -391,4 +392,72 @@ export async function parseTaskWithAI(rawText: string): Promise<ParseTaskResult>
   }
 
   return parseTaskForUser(supabase, user.id, rawText);
+}
+
+export async function generateTelegramLinkCode(
+  forceNew = false,
+): Promise<{ code: string; expiresAt: string } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  if (!forceNew) {
+    const { data: existing } = await supabase
+      .from("users")
+      .select("telegram_link_code, telegram_link_code_expires_at")
+      .eq("id", user.id)
+      .single();
+
+    if (
+      existing?.telegram_link_code &&
+      existing.telegram_link_code_expires_at &&
+      new Date(existing.telegram_link_code_expires_at) > new Date()
+    ) {
+      return {
+        code: existing.telegram_link_code,
+        expiresAt: existing.telegram_link_code_expires_at,
+      };
+    }
+  }
+
+  const code = generateLinkCode();
+  const expiresAt = new Date(Date.now() + LINK_CODE_TTL_MINUTES * 60_000).toISOString();
+
+  const { error } = await supabase
+    .from("users")
+    .update({ telegram_link_code: code, telegram_link_code_expires_at: expiresAt })
+    .eq("id", user.id);
+
+  if (error) {
+    return { error: "Не вдалося згенерувати код, спробуй ще раз." };
+  }
+
+  return { code, expiresAt };
+}
+
+export async function disconnectTelegram(): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const { error } = await supabase
+    .from("users")
+    .update({ telegram_chat_id: null })
+    .eq("id", user.id);
+
+  if (error) {
+    return { error: "Не вдалося відключити Telegram, спробуй ще раз." };
+  }
+
+  return { ok: true };
 }
