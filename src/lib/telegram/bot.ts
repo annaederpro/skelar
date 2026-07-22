@@ -34,6 +34,35 @@ async function lookupLinkedUserId(
   return data?.id ?? null;
 }
 
+// Shared by /link and /start's deep-link payload: looks up a user by an
+// unexpired one-time code, links this chat to them, and clears the code
+// so it can't be replayed.
+async function tryLinkChat(
+  admin: SupabaseClient,
+  chatId: number,
+  code: string,
+): Promise<boolean> {
+  const { data } = await admin
+    .from("users")
+    .select("id")
+    .eq("telegram_link_code", code)
+    .gt("telegram_link_code_expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (!data) return false;
+
+  const { error } = await admin
+    .from("users")
+    .update({
+      telegram_chat_id: String(chatId),
+      telegram_link_code: null,
+      telegram_link_code_expires_at: null,
+    })
+    .eq("id", data.id);
+
+  return !error;
+}
+
 function nextDayIso(iso: string): string {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + 1);
@@ -104,37 +133,38 @@ export function createBot(): Bot {
   const bot = new Bot(token);
 
   bot.command("start", async (ctx) => {
+    const payload = typeof ctx.match === "string" ? ctx.match.trim() : "";
+
+    if (payload) {
+      const linked = await tryLinkChat(createAdminClient(), ctx.chat.id, payload);
+      await ctx.reply(
+        linked
+          ? "✅ Прив'язано! Тепер надсилай голосові або текстові задачі."
+          : "Код недійсний або застарів. Згенеруй новий код у coralQ.",
+      );
+      return;
+    }
+
     await ctx.reply(
       "Привіт! Я додаю задачі в coralQ 🐠\n" +
         "Надішли мені текст або голосове — розберу і збережу.\n" +
-        "Спочатку прив'яжи акаунт: /link <код>",
+        "Відкрий Налаштування → Під'єднати Telegram у coralQ, щоб прив'язати акаунт.",
     );
   });
 
   bot.command("link", async (ctx) => {
-    const secret = process.env.TELEGRAM_LINK_SECRET;
-    const ownerEmail = process.env.TELEGRAM_OWNER_EMAIL;
-    const supplied = typeof ctx.match === "string" ? ctx.match.trim() : "";
-
-    if (!secret || !ownerEmail || !supplied || supplied !== secret) {
-      await ctx.reply("❌ Невірний код.");
+    const code = typeof ctx.match === "string" ? ctx.match.trim() : "";
+    if (!code) {
+      await ctx.reply("Код недійсний або застарів. Згенеруй новий код у coralQ.");
       return;
     }
 
-    const admin = createAdminClient();
-    const { data, error } = await admin
-      .from("users")
-      .update({ telegram_chat_id: String(ctx.chat.id) })
-      .eq("email", ownerEmail)
-      .select("id")
-      .maybeSingle();
-
-    if (error || !data) {
-      await ctx.reply(MSG_GENERIC_FAILED);
-      return;
-    }
-
-    await ctx.reply("✅ Прив'язано! Тепер надсилай голосові або текстові задачі.");
+    const linked = await tryLinkChat(createAdminClient(), ctx.chat.id, code);
+    await ctx.reply(
+      linked
+        ? "✅ Прив'язано! Тепер надсилай голосові або текстові задачі."
+        : "Код недійсний або застарів. Згенеруй новий код у coralQ.",
+    );
   });
 
   bot.on("message:voice", async (ctx) => {
