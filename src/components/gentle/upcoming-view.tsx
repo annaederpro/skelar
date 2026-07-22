@@ -6,7 +6,8 @@ import { TaskList } from "@/components/gentle/task-list";
 import { WeekStrip } from "@/components/gentle/week-strip";
 import { ProjectFilterBar, type ProjectFilter } from "@/components/gentle/project-filter-bar";
 import { EditTaskDialog } from "@/components/gentle/edit-task-dialog";
-import { toggleTaskComplete, createProject } from "@/app/actions";
+import { toggleTaskComplete, createProject, releaseTask, restoreTask } from "@/app/actions";
+import { ReleaseToast } from "@/components/gentle/release-toast";
 import { useProjects } from "@/context/projects-context";
 import { getAppToday } from "@/lib/date";
 import { formatDayHeader } from "@/lib/upcoming-date";
@@ -25,6 +26,7 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [editingTask, setEditingTask] = useState<DbTask | null>(null);
+  const [releasedTask, setReleasedTask] = useState<{ id: string; title: string } | null>(null);
   const [, startTransition] = useTransition();
   const projects = useProjects();
   const router = useRouter();
@@ -105,6 +107,35 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
     });
   };
 
+  const handleRelease = (task: DbTask) => {
+    setTasks((prev) => prev.filter((t) => t.id !== task.id));
+    setErrorMessage(null);
+    startTransition(async () => {
+      const result = await releaseTask(task.id);
+      if ("error" in result) {
+        setTasks((prev) => [task, ...prev]);
+        setErrorMessage(result.error);
+        return;
+      }
+      setReleasedTask({ id: task.id, title: task.title });
+      router.refresh();
+    });
+  };
+
+  const handleUndoRelease = () => {
+    if (!releasedTask) return;
+    const id = releasedTask.id;
+    setReleasedTask(null);
+    startTransition(async () => {
+      const result = await restoreTask(id);
+      if ("error" in result) {
+        setErrorMessage(result.error);
+        return;
+      }
+      router.refresh();
+    });
+  };
+
   const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = newProjectName.trim();
@@ -153,6 +184,7 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
                 projectNameById={projectNameById}
                 onToggleComplete={handleToggleComplete}
                 onEditTask={setEditingTask}
+                onReleaseTask={handleRelease}
               />
             </section>
           )}
@@ -167,6 +199,7 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
                 projectNameById={projectNameById}
                 onToggleComplete={handleToggleComplete}
                 onEditTask={setEditingTask}
+                onReleaseTask={handleRelease}
               />
             </section>
           ))}
@@ -183,6 +216,11 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
           setEditingTask(null);
           router.refresh();
         }}
+      />
+      <ReleaseToast
+        task={releasedTask}
+        onUndo={handleUndoRelease}
+        onDismiss={() => setReleasedTask(null)}
       />
     </div>
   );
