@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { ResourceStatusProvider, useResourceStatus } from "@/context/resource-status-context";
 import { ProjectsProvider } from "@/context/projects-context";
 import { ResourceStatusToggle } from "@/components/gentle/resource-status-toggle";
@@ -24,15 +25,24 @@ function AppHeader({ openTasks }: { openTasks: DbTask[] }) {
     <header className="flex flex-col gap-4 px-4 pt-6">
       <div className="flex w-full items-center justify-between">
         <Wordmark />
-        <form action={signOut}>
-          <button
-            type="submit"
-            aria-label="Вийти"
+        <div className="flex items-center gap-3">
+          <Link
+            href="/settings"
+            aria-label="Налаштування"
             className="text-ink-soft transition-colors hover:text-ink"
           >
-            <LogOut className="size-5" />
-          </button>
-        </form>
+            <Settings className="size-5" />
+          </Link>
+          <form action={signOut}>
+            <button
+              type="submit"
+              aria-label="Вийти"
+              className="text-ink-soft transition-colors hover:text-ink"
+            >
+              <LogOut className="size-5" />
+            </button>
+          </form>
+        </div>
       </div>
       {showFocus && (
         <>
