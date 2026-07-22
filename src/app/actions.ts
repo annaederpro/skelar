@@ -461,3 +461,54 @@ export async function disconnectTelegram(): Promise<{ ok: true } | { error: stri
 
   return { ok: true };
 }
+
+export async function updateDisplayName(
+  name: string,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const trimmed = name.trim();
+
+  const { error } = await supabase
+    .from("users")
+    .update({ display_name: trimmed || null })
+    .eq("id", user.id);
+
+  if (error) {
+    return { error: "Не вдалося зберегти ім'я, спробуй ще раз." };
+  }
+
+  return { ok: true };
+}
+
+export async function updatePassword(
+  password: string,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  if (password.length < 6) {
+    return { error: "Пароль має містити щонайменше 6 символів." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { error: mapAuthError(error.message) };
+  }
+
+  return { ok: true };
+}
