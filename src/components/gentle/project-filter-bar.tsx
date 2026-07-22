@@ -27,7 +27,7 @@ interface ProjectFilterBarProps {
   onCreateProject: (e: React.FormEvent) => void;
 }
 
-const chipClass = (isActive: boolean) =>
+export const chipClass = (isActive: boolean) =>
   cn(
     "shrink-0 whitespace-nowrap rounded-full border-[1.5px] px-3.5 py-[7px] text-[12.5px] font-bold transition-colors select-none [-webkit-touch-callout:none] [-webkit-user-select:none]",
     isActive
