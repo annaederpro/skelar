@@ -4,12 +4,13 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { TaskList } from "@/components/gentle/task-list";
 import { ProjectFilterBar, type ProjectFilter } from "@/components/gentle/project-filter-bar";
+import { TaskStatusFilterBar, type StatusFilter } from "@/components/gentle/task-status-filter-bar";
 import { EditTaskDialog } from "@/components/gentle/edit-task-dialog";
 import { toggleTaskComplete, createProject, releaseTask, restoreTask } from "@/app/actions";
 import { ReleaseToast } from "@/components/gentle/release-toast";
 import { useResourceStatus } from "@/context/resource-status-context";
 import { useProjects } from "@/context/projects-context";
-import { priorityBucket } from "@/types/gentle";
+import { priorityBucket, compareTasksForAllTasksTab } from "@/types/gentle";
 import type { DbTask } from "@/types/gentle";
 
 interface TaskViewProps {
@@ -22,6 +23,7 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   const [syncedTasks, setSyncedTasks] = useState(initialTasks);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [projectFilter, setProjectFilter] = useState<ProjectFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [editingTask, setEditingTask] = useState<DbTask | null>(null);
@@ -34,6 +36,10 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   // The energy-based filter (hide deep-effort tasks) applies only on Сьогодні —
   // other tabs show everything regardless of today's energy level.
   const applyDepletedFilter = isDepleted && (pathname === "/today" || pathname.startsWith("/today/"));
+  // Importance sort + Виконані filter apply only on "Всі задачі" — /today
+  // already excludes completed tasks at the query level, and /browse's
+  // project pages keep their existing created_at order.
+  const isAllTasksTab = pathname === "/inbox";
 
   // Keep in sync with the server data whenever it's re-fetched (e.g. a
   // router.refresh() triggered by completing a task elsewhere, like Focus
@@ -61,8 +67,17 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
     } else if (projectFilter !== "all") {
       list = list.filter((task) => task.project_id === projectFilter);
     }
+    if (isAllTasksTab) {
+      if (statusFilter === "completed") {
+        list = list.filter((task) => task.status === "completed");
+      }
+      // .slice() first: list may still be the same array reference as
+      // `tasks` (no depleted/project filter applied) — sorting in place
+      // would mutate component state.
+      list = list.slice().sort(compareTasksForAllTasksTab);
+    }
     return list;
-  }, [tasks, applyDepletedFilter, projectFilter]);
+  }, [tasks, applyDepletedFilter, projectFilter, isAllTasksTab, statusFilter]);
 
   const handleToggleComplete = (task: DbTask) => {
     const nextStatus = task.status === "completed" ? "todo" : "completed";
@@ -127,6 +142,9 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
 
   return (
     <div className="flex flex-col gap-2">
+      {isAllTasksTab && (
+        <TaskStatusFilterBar statusFilter={statusFilter} onSelectFilter={setStatusFilter} />
+      )}
       <ProjectFilterBar
         projects={projects}
         projectFilter={projectFilter}
@@ -150,9 +168,11 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
         onEditTask={setEditingTask}
         onReleaseTask={handleRelease}
         emptyMessage={
-          projectFilter !== "all" && tasks.length > 0
-            ? "У цьому проєкті поки порожньо 🌊"
-            : emptyMessage
+          isAllTasksTab && statusFilter === "completed"
+            ? "Ще немає виконаних задач 🌿"
+            : projectFilter !== "all" && tasks.length > 0
+              ? "У цьому проєкті поки порожньо 🌊"
+              : emptyMessage
         }
       />
       <EditTaskDialog
