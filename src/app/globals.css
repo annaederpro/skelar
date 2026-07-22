@@ -155,8 +155,8 @@
   body {
     @apply text-foreground;
     background:
-      radial-gradient(1100px 560px at 15% -8%, #dff0f0 0, transparent 55%),
-      radial-gradient(900px 480px at 100% 0, #eaf2ec 0, transparent 50%), #dee9e6;
+      radial-gradient(ellipse farthest-corner at 15% -8%, #dff0f0 0, transparent 100%),
+      radial-gradient(ellipse farthest-corner at 100% 0, #eaf2ec 0, transparent 100%), #dee9e6;
   }
   html {
     @apply font-sans;
