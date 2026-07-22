@@ -35,7 +35,7 @@ export function BottomNav({ todayCount }: BottomNavProps) {
             <Icon className="size-5" />
             {label}
             {href === "/today" && todayCount > 0 && (
-              <span className="absolute -top-1 right-[calc(50%-20px)] flex h-[17px] min-w-[17px] items-center justify-center rounded-[9px] bg-coral px-1 text-[10px] font-bold text-white">
+              <span className="absolute -top-1 right-[calc(50%-20px)] flex h-[17px] min-w-[17px] items-center justify-center rounded-[9px] border border-paper bg-sea-soft px-1 text-[10px] font-bold text-sea-deep">
                 {todayCount}
               </span>
             )}

@@ -2,8 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Plus, Check, Pencil, Trash2, FolderOpen } from "lucide-react";
+import { Plus, Check, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { deleteProject, updateProjectName } from "@/app/actions";
 import {
@@ -211,13 +210,6 @@ export function ProjectFilterBar({
           <Plus className="size-3.5" />
           {projects.length === 0 && "Проєкт"}
         </button>
-        <Link
-          href="/browse"
-          aria-label="Переглянути всі проєкти"
-          className={cn(chipClass(false), "flex items-center gap-1")}
-        >
-          <FolderOpen className="size-3.5" />
-        </Link>
       </div>
 
       {isCreatingProject && (

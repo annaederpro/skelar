@@ -251,6 +251,7 @@ export function QuickAddTaskForm({
         dueTime={dueTime}
         onDueTimeChange={setDueTime}
         projects={projects}
+        collapsibleDetails={aiNotice === null}
       />
 
       <div className="flex items-center gap-2">
