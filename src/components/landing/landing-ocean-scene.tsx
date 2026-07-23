@@ -1,6 +1,9 @@
 "use client";
 
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { SPECIES } from "@/lib/aquarium-species";
+
+const CLOWNFISH = SPECIES.find((s) => s.name === "Клоун")!.icon;
 
 const OCEAN_CSS = `
 .lo-scene{position:absolute;inset:0;overflow:hidden;background:linear-gradient(180deg,#BFE6E8 0%,#9CD2D8 60%,#8FC6CD 100%)}
@@ -15,21 +18,17 @@ const OCEAN_CSS = `
 `;
 
 const FISH_LANES = [
-  { top: "20%", restLeft: 15, dur: 26, delay: 0, dir: 1 as const, size: 30, fill: "#DF8464", opacity: 0.85 },
-  { top: "58%", restLeft: 72, dur: 32, delay: 4, dir: -1 as const, size: 24, fill: "#2E6E7A", opacity: 0.55 },
-  { top: "38%", restLeft: 40, dur: 22, delay: 9, dir: 1 as const, size: 18, fill: "#B98AC0", opacity: 0.5 },
-  { top: "72%", restLeft: 25, dur: 30, delay: 2, dir: -1 as const, size: 34, fill: "#3E8E9C", opacity: 0.8 },
-  { top: "14%", restLeft: 60, dur: 36, delay: 12, dir: 1 as const, size: 20, fill: "#E7936F", opacity: 0.5 },
+  { top: "20%", restLeft: 15, dur: 26, delay: 0, dir: 1 as const, size: 34, opacity: 0.9 },
+  { top: "58%", restLeft: 72, dur: 32, delay: 4, dir: -1 as const, size: 26, opacity: 0.6 },
+  { top: "38%", restLeft: 40, dur: 22, delay: 9, dir: 1 as const, size: 20, opacity: 0.55 },
+  { top: "72%", restLeft: 25, dur: 30, delay: 2, dir: -1 as const, size: 38, opacity: 0.85 },
+  { top: "14%", restLeft: 60, dur: 36, delay: 12, dir: 1 as const, size: 22, opacity: 0.55 },
 ];
 
-function FishSilhouette({ size, fill }: { size: number; fill: string }) {
+function Clownfish({ size }: { size: number }) {
   return (
-    <svg width={size} height={size * 0.78} viewBox="0 0 38 30" aria-hidden>
-      <path
-        d="M0 6 C-16 6 -18 -6 -8 -8 C-2 -14 12 -12 12 -2 C20 -2 18 8 8 8Z"
-        fill={fill}
-        transform="translate(10,10)"
-      />
+    <svg width={size} height={size * 0.79} viewBox="0 0 38 30" aria-hidden>
+      {CLOWNFISH}
     </svg>
   );
 }
@@ -57,8 +56,8 @@ export function LandingOceanScene() {
           }}
         >
           <div className={reducedMotion ? undefined : "lo-bob"}>
-            <div style={lane.dir < 0 ? { transform: "scaleX(-1)" } : undefined}>
-              <FishSilhouette size={lane.size} fill={lane.fill} />
+            <div style={lane.dir > 0 ? { transform: "scaleX(-1)" } : undefined}>
+              <Clownfish size={lane.size} />
             </div>
           </div>
         </div>
