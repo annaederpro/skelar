@@ -25,9 +25,11 @@ const SAMPLE_TASKS: SampleTask[] = [
   { title: "Підготувати презентацію", durationMinutes: 45, energyLevel: 3, priorityBucket: "high" },
 ];
 
-// Demo energy is fixed at "В нормі" — the real mood selector lives in the
-// authenticated app shell, not the landing page.
-const DEMO_ENERGY: EnergyLevel = 2;
+const ENERGY_OPTIONS: { level: EnergyLevel; label: string }[] = [
+  { level: 1, label: "Мало сил" },
+  { level: 2, label: "В нормі" },
+  { level: 3, label: "Повний заряд" },
+];
 
 const TIME_OPTIONS: { minutes: number; label: string }[] = [
   { minutes: 15, label: "15 хв" },
@@ -44,6 +46,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export function LandingFocusDemo() {
   const oceanNoise = useOceanNoise();
+  const [energy, setEnergy] = useState<EnergyLevel>(2);
   const [selectedMin, setSelectedMin] = useState<number | null>(null);
   const [poolIndex, setPoolIndex] = useState(0);
   const [sessionOpen, setSessionOpen] = useState(false);
@@ -55,15 +58,20 @@ export function LandingFocusDemo() {
   const pool = useMemo(() => {
     if (selectedMin === null) return [];
     return SAMPLE_TASKS.filter(
-      (t) => t.energyLevel <= DEMO_ENERGY && t.durationMinutes <= selectedMin,
+      (t) => t.energyLevel <= energy && t.durationMinutes <= selectedMin,
     ).sort(
       (a, b) =>
         PRIORITY_WEIGHT[b.priorityBucket] - PRIORITY_WEIGHT[a.priorityBucket] ||
         a.durationMinutes - b.durationMinutes,
     );
-  }, [selectedMin]);
+  }, [selectedMin, energy]);
 
   const suggested = pool.length > 0 ? pool[poolIndex % pool.length] : null;
+
+  const handlePickEnergy = (level: EnergyLevel) => {
+    setEnergy(level);
+    setPoolIndex(0);
+  };
 
   const handlePickTime = (minutes: number) => {
     setSelectedMin(minutes);
@@ -126,8 +134,27 @@ export function LandingFocusDemo() {
               Шум моря
             </button>
           </div>
-          <p className="mb-3.5 text-[13px] leading-relaxed text-white/85">Скільки в тебе вільного часу?</p>
+          <p className="mb-2 text-[13px] leading-relaxed text-white/85">Скільки в тебе сил?</p>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Скільки сил">
+            {ENERGY_OPTIONS.map(({ level, label }) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => handlePickEnergy(level)}
+                aria-pressed={energy === level}
+                className={cn(
+                  "rounded-[14px] border-[1.5px] px-3.5 py-2 text-[13.5px] font-bold transition-colors",
+                  energy === level
+                    ? "border-white bg-white text-sea-deep"
+                    : "border-white/35 bg-white/10 text-white hover:bg-white/20",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
+          <p className="mb-2 mt-3.5 text-[13px] leading-relaxed text-white/85">І скільки часу?</p>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Скільки часу">
             {TIME_OPTIONS.map(({ minutes, label }) => (
               <button

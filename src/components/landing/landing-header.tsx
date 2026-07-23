@@ -30,7 +30,7 @@ export function LandingHeader() {
         <nav className="flex items-center gap-4">
           <Link
             href="/login"
-            className="text-[13.5px] font-bold text-ink-soft transition-colors hover:text-ink"
+            className="text-[13.5px] font-bold text-sea-deep transition-colors hover:text-ink"
           >
             Увійти
           </Link>
