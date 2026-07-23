@@ -27,9 +27,13 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith("/login");
+  const pathname = request.nextUrl.pathname;
+  const isAuthRoute = pathname.startsWith("/login");
+  // "/" is public too — it now serves the marketing landing page to logged-out
+  // visitors (src/app/page.tsx decides what to render/redirect from there).
+  const isPublicRoute = pathname === "/" || isAuthRoute;
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
