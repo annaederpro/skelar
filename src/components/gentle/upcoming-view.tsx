@@ -8,6 +8,7 @@ import { ProjectFilterBar, type ProjectFilter } from "@/components/gentle/projec
 import { EditTaskDialog } from "@/components/gentle/edit-task-dialog";
 import { toggleTaskComplete, createProject, releaseTask, restoreTask } from "@/app/actions";
 import { ReleaseToast } from "@/components/gentle/release-toast";
+import { CompletionToast, pickCompletionPhrase } from "@/components/gentle/completion-toast";
 import { useProjects } from "@/context/projects-context";
 import { getAppToday } from "@/lib/date";
 import { formatDayHeader } from "@/lib/upcoming-date";
@@ -97,14 +98,21 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
   // "completed", and it should disappear immediately rather than sit
   // checked in place until the next refresh (completed tasks live in "Всі
   // задачі" instead).
+  const [completion, setCompletion] = useState<{ key: number; message: string } | null>(null);
+  const lastPhraseRef = useRef<string | null>(null);
+
   const handleToggleComplete = (task: DbTask) => {
     setTasks((prev) => prev.filter((t) => t.id !== task.id));
     setErrorMessage(null);
+    const message = pickCompletionPhrase(lastPhraseRef.current);
+    lastPhraseRef.current = message;
+    setCompletion((prev) => ({ key: (prev?.key ?? 0) + 1, message }));
     startTransition(async () => {
       const result = await toggleTaskComplete(task.id, "completed");
       if ("error" in result) {
         setTasks((prev) => [...prev, task]);
         setErrorMessage(result.error);
+        setCompletion(null);
         return;
       }
       router.refresh();
@@ -226,6 +234,7 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
         onUndo={handleUndoRelease}
         onDismiss={() => setReleasedTask(null)}
       />
+      <CompletionToast toast={completion} />
     </div>
   );
 }
