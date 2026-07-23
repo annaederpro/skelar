@@ -31,7 +31,9 @@ function AppHeader({
     <header className="flex flex-col gap-4 px-4 pt-6">
       <div className="flex flex-col gap-1.5">
         <div className="flex w-full items-center justify-between">
-          <Wordmark />
+          <Link href="/today" aria-label="На головну">
+            <Wordmark />
+          </Link>
           <div className="flex items-center gap-3">
             <Link
               href="/settings"
