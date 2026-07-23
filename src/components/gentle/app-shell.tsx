@@ -53,8 +53,10 @@ function AppHeader({
             </form>
           </div>
         </div>
-        {showFocus && displayName && (
-          <p className="text-[14px] font-bold text-ink">Привіт, {displayName}! Як ти?</p>
+        {showFocus && (
+          <p className="text-[14px] font-bold text-ink">
+            {displayName ? `Привіт, ${displayName}! Як ти?` : "Привіт! Як ти?"}
+          </p>
         )}
       </div>
       {showFocus && (
