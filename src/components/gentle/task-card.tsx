@@ -168,6 +168,7 @@ export function TaskCard({
                     e.stopPropagation();
                     downloadIcs(taskIcsFilename(task), buildTaskIcs(task));
                   }}
+                  onKeyDown={(e) => e.stopPropagation()}
                   className="ml-0.5 flex items-center justify-center text-ink-soft/60 transition-colors hover:text-sea"
                   aria-label="Додати до календаря"
                 >
