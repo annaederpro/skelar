@@ -72,6 +72,31 @@ async function tryLinkChat(
   return !error;
 }
 
+const DONE_KEYWORDS = new Set(["готово", "зробив", "зроблено", "виконано", "done"]);
+
+// Shared by the text-reply and 👍-reaction completion paths: resolves a
+// Telegram confirmation message back to the task it announced (only tasks
+// created via the bot ever have telegram_confirmation_message_id set), and
+// marks it completed.
+async function tryCompleteFromMessage(
+  admin: SupabaseClient,
+  userId: string,
+  messageId: number,
+): Promise<"completed" | "already_done" | "not_found"> {
+  const { data: task } = await admin
+    .from("tasks")
+    .select("id, status")
+    .eq("user_id", userId)
+    .eq("telegram_confirmation_message_id", messageId)
+    .maybeSingle();
+
+  if (!task) return "not_found";
+  if (task.status === "completed") return "already_done";
+
+  await admin.from("tasks").update({ status: "completed" }).eq("id", task.id);
+  return "completed";
+}
+
 function nextDayIso(iso: string): string {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + 1);
@@ -250,6 +275,18 @@ export function createBot(): Bot {
     if (!userId) {
       await ctx.reply(MSG_NOT_LINKED);
       return;
+    }
+
+    const replyTarget = ctx.message.reply_to_message?.message_id;
+    if (replyTarget && DONE_KEYWORDS.has(text.toLowerCase())) {
+      const result = await tryCompleteFromMessage(admin, userId, replyTarget);
+      if (result !== "not_found") {
+        await ctx.reply(result === "completed" ? "✅ Зроблено!" : "Вже позначено готовим 🐠");
+        return;
+      }
+      // not_found → this reply doesn't target a tracked confirmation
+      // message (e.g. it's a reply to the digest, or to an old unrelated
+      // message) — fall through to normal task creation below, unchanged.
     }
 
     after(async () => {
