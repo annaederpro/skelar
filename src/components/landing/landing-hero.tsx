@@ -10,8 +10,9 @@ export function LandingHero() {
           Лагідний таск-менеджер для твого спокою та росту
         </h1>
         <p className="max-w-md text-[16px] leading-relaxed text-sea-deep sm:text-[18px]">
-          Надиктуй чи запиши все, що в голові — ШІ розкладе це по поличках, а coralQ видаватиме по одній задачі під
-          твій рівень сил.
+          Надиктуй чи запиши все, що в голові — ШІ розкладе це по поличках, а{" "}
+          <span className="text-[18px] font-bold text-ink sm:text-[20px]">coralQ</span> видаватиме по одній задачі
+          під твій рівень сил.
         </p>
         <Link
           href="/login?mode=signup"
