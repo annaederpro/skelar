@@ -102,33 +102,9 @@ function describeTask(task: DbTask): string {
   return parts.join(" · ");
 }
 
-// Ukrainian count-noun agreement for "задача": 1 → задачу, 2-4 → задачі
-// (except the 12-14 exception), everything else → задач.
-function pluralizeTasks(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "задачу";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "задачі";
-  return "задач";
-}
-
-// `attemptedCount` may exceed `tasks.length` if some inserts failed (rare,
-// independent per-row inserts) — that's reported as a trailing note rather
-// than failing the whole confirmation.
-function buildConfirmation(tasks: DbTask[], attemptedCount: number): string {
-  const notSaved = attemptedCount - tasks.length;
-  const failureNote = notSaved > 0 ? `\n⚠️ ${notSaved} не вдалося зберегти, спробуй ще раз.` : "";
-
-  if (tasks.length === 1) {
-    return `✅ Додано: ${describeTask(tasks[0])}${failureNote}`;
-  }
-
-  const header = `✅ Додано ${tasks.length} ${pluralizeTasks(tasks.length)}:`;
-  const lines = tasks.map((task) => `· ${describeTask(task)}`);
-  return [header, ...lines].join("\n") + failureNote;
-}
-
-// Runs inside after(): parse raw text into a task, insert it, confirm in chat.
+// Runs inside after(): parse raw text into tasks, insert each, send one
+// confirmation per task (so a later reply/👍 on that exact message can be
+// traced back to exactly one task — see tryCompleteFromMessage below).
 async function createTaskFromText(
   ctx: Context,
   admin: SupabaseClient,
@@ -164,7 +140,18 @@ async function createTaskFromText(
     return;
   }
 
-  await ctx.api.sendMessage(chatId, buildConfirmation(insertedTasks, parsed.tasks.length));
+  for (const task of insertedTasks) {
+    const sent = await ctx.api.sendMessage(chatId, `✅ Додано: ${describeTask(task)}`);
+    await admin
+      .from("tasks")
+      .update({ telegram_confirmation_message_id: sent.message_id })
+      .eq("id", task.id);
+  }
+
+  const notSaved = parsed.tasks.length - insertedTasks.length;
+  if (notSaved > 0) {
+    await ctx.api.sendMessage(chatId, `⚠️ ${notSaved} не вдалося зберегти, спробуй ще раз.`);
+  }
 }
 
 export function createBot(): Bot {
