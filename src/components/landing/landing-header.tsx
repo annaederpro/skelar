@@ -36,9 +36,9 @@ export function LandingHeader() {
           </Link>
           <Link
             href="/login?mode=signup"
-            className="rounded-full bg-sea px-4 py-2 text-[13.5px] font-extrabold text-white transition-colors hover:bg-sea-deep"
+            className="rounded-full bg-sea-deep px-4 py-2 text-[13.5px] font-extrabold text-white shadow-[0_10px_26px_rgba(46,63,61,.22)] transition-transform hover:-translate-y-0.5"
           >
-            Спробувати
+            Зареєструватись
           </Link>
         </nav>
       </div>

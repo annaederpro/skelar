@@ -7,10 +7,11 @@ export function LandingHero() {
       <LandingOceanScene />
       <div className="relative z-10 flex flex-col items-center gap-5 px-6 text-center">
         <h1 className="max-w-2xl font-heading text-[32px] font-semibold leading-tight text-ink sm:text-[42px]">
-          Лагідний таск-менеджер, що росте разом із тобою
+          Лагідний таск-менеджер для твого спокою
         </h1>
         <p className="max-w-md text-[16px] leading-relaxed text-sea-deep sm:text-[18px]">
-          Вивали все з голови — ШІ розкладе це на задачі, а coralQ дасть рівно стільки, скільки ти зараз потягнеш.
+          Надиктуй чи запиши все, що в голові — ШІ розкладе це по поличках, а coralQ видаватиме по одній задачі під
+          твій рівень сил.
         </p>
         <Link
           href="/login?mode=signup"
