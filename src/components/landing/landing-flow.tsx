@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
-import { cn } from "@/lib/utils";
 
 const STEPS = [
   {
@@ -26,32 +25,7 @@ const STEPS = [
   },
 ] as const;
 
-function StepCard({ step, className }: { step: (typeof STEPS)[number]; className?: string }) {
-  return (
-    <div className={cn("rounded-[22px] bg-[#EFE3C7] p-6 shadow-[0_14px_34px_rgba(21,41,45,.16)]", className)}>
-      <span className="flex size-8 items-center justify-center rounded-full bg-sea-soft font-heading text-[14px] font-semibold text-sea-deep">
-        {step.n}
-      </span>
-      <div className="mt-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-sea-deep">{step.en}</div>
-      <h3 className="mt-1 font-heading text-[25px] font-semibold leading-tight text-ink">{step.title}</h3>
-      <p className="mt-2.5 text-[14px] leading-relaxed text-ink-soft">{step.body}</p>
-      {step.screenshot && (
-        <div className="relative mt-4 h-[190px] w-full overflow-hidden rounded-[16px] shadow-[0_8px_22px_rgba(21,41,45,.2)]">
-          <Image
-            src={step.screenshot}
-            alt={`Реальний скріншот екрана «${step.en}» у coralQ`}
-            fill
-            sizes="(min-width: 640px) 340px, 320px"
-            className="object-cover object-top"
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function LandingFlow() {
-  const [capture, inbox, today] = STEPS;
   return (
     <section className="bg-sea px-6 py-20">
       <ScrollReveal className="mx-auto max-w-4xl">
@@ -61,33 +35,40 @@ export function LandingFlow() {
           звільни голову від думок, дозволь ШІ впорядкувати задачі та виконуй рівно стільки, скільки в силах
           сьогодні.
         </p>
-
-        <div className="relative mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-x-10">
-          <span
-            className="pointer-events-none absolute left-1/2 top-[70px] hidden -translate-x-1/2 text-[24px] text-white/70 sm:block"
-            aria-hidden
-          >
-            →
-          </span>
-
-          <StepCard step={capture} />
-          <StepCard step={inbox} className="sm:mt-16" />
-
-          <div className="hidden justify-start pl-6 sm:flex sm:order-3">
-            <div className="w-[200px] overflow-hidden rounded-[24px] shadow-[0_16px_36px_rgba(0,0,0,.28)]">
-              {today.screenshot && (
-                <Image
-                  src={today.screenshot}
-                  alt="Реальний скріншот екрана «Today» у coralQ"
-                  width={220}
-                  height={478}
-                  className="w-full"
-                />
+        <div className="mt-8 flex flex-col items-center gap-2.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-center">
+          {STEPS.map((step, i) => (
+            <div key={step.n} className="contents">
+              <div className="w-full max-w-[320px] rounded-[20px] bg-[#EFE3C7] p-[22px_18px] shadow-[0_10px_28px_rgba(21,41,45,.14)] sm:w-[210px]">
+                <span className="flex size-7 items-center justify-center rounded-full bg-sea-soft font-heading text-[13px] font-semibold text-sea-deep">
+                  {step.n}
+                </span>
+                <span className="mt-2.5 inline-block rounded-full bg-sea-soft px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-sea-deep">
+                  {step.en}
+                </span>
+                <h3 className="mt-1.5 font-heading text-[21px] font-semibold leading-tight text-ink">{step.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{step.body}</p>
+                {step.screenshot && (
+                  <div className="relative mt-3.5 h-[170px] w-full overflow-hidden rounded-[14px] shadow-[0_2px_10px_rgba(21,41,45,.14)]">
+                    <Image
+                      src={step.screenshot}
+                      alt={`Реальний скріншот екрана «${step.en}» у coralQ`}
+                      fill
+                      sizes="(min-width: 640px) 210px, 320px"
+                      className="object-cover object-top"
+                    />
+                  </div>
+                )}
+              </div>
+              {i < STEPS.length - 1 && (
+                <span
+                  className="flex h-9 rotate-90 items-center justify-center text-[22px] text-white/70 sm:h-[54px] sm:rotate-0"
+                  aria-hidden
+                >
+                  →
+                </span>
               )}
             </div>
-          </div>
-
-          <StepCard step={today} className="sm:order-4 sm:-mt-8" />
+          ))}
         </div>
       </ScrollReveal>
     </section>
