@@ -16,17 +16,14 @@ export function LandingFooterCta() {
       </Link>
       <footer className="mx-auto mt-14 flex max-w-6xl flex-col items-center gap-3 border-t border-line pt-6 text-[12.5px] text-ink-soft sm:flex-row sm:justify-between">
         <Wordmark />
-        <span>
-          Зроблено з 🪸 ·{" "}
-          <a
-            href="https://github.com/annaederpro/skelar"
-            target="_blank"
-            rel="noreferrer"
-            className="underline underline-offset-2 hover:text-ink"
-          >
-            Дивитись код на GitHub
-          </a>
-        </span>
+        <a
+          href="https://github.com/annaederpro/skelar"
+          target="_blank"
+          rel="noreferrer"
+          className="underline underline-offset-2 hover:text-ink"
+        >
+          Дивитись код на GitHub
+        </a>
       </footer>
     </section>
   );
