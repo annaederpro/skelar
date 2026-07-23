@@ -39,11 +39,11 @@ function addMinutesToDateTime(
 ): { date: string; time: string } {
   const [y, mo, d] = isoDate.split("-").map(Number);
   const [h, mi, s] = time.split(":").map(Number);
-  const dt = new Date(y, mo - 1, d, h, mi, s || 0);
-  dt.setMinutes(dt.getMinutes() + minutes);
+  const dt = new Date(Date.UTC(y, mo - 1, d, h, mi, s || 0));
+  dt.setUTCMinutes(dt.getUTCMinutes() + minutes);
   return {
-    date: `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`,
-    time: `${pad(dt.getHours())}${pad(dt.getMinutes())}${pad(dt.getSeconds())}`,
+    date: `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`,
+    time: `${pad(dt.getUTCHours())}${pad(dt.getUTCMinutes())}${pad(dt.getUTCSeconds())}`,
   };
 }
 
