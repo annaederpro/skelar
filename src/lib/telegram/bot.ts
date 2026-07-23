@@ -51,6 +51,15 @@ async function tryLinkChat(
 
   if (!data) return false;
 
+  // A chat can only ever be linked to one account. Clear it from whichever
+  // account currently holds it (if any) before attaching it to the new one,
+  // so lookupLinkedUserId's .maybeSingle() never sees two matching rows.
+  await admin
+    .from("users")
+    .update({ telegram_chat_id: null })
+    .eq("telegram_chat_id", String(chatId))
+    .neq("id", data.id);
+
   const { error } = await admin
     .from("users")
     .update({

@@ -74,7 +74,8 @@ export function TelegramConnectCard() {
       </a>
       <div className="flex items-center gap-2 text-[13px] text-ink-soft">
         <span>
-          або напиши <code className="rounded bg-paper px-1.5 py-0.5">/link {state.code}</code>
+          Якщо чат з ботом вже відкритий, кнопка може нічого не надіслати — тоді напиши{" "}
+          <code className="rounded bg-paper px-1.5 py-0.5">/link {state.code}</code> в чаті вручну
         </span>
         <button
           type="button"
