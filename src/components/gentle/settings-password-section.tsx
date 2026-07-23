@@ -56,6 +56,7 @@ export function SettingsPasswordSection() {
             onChange={(e) => setPassword(e.target.value)}
             minLength={6}
             autoComplete="new-password"
+            className="border-ink-soft/40 bg-white text-ink placeholder:text-ink-soft/60"
           />
         </div>
 
@@ -70,6 +71,7 @@ export function SettingsPasswordSection() {
             onChange={(e) => setConfirmPassword(e.target.value)}
             minLength={6}
             autoComplete="new-password"
+            className="border-ink-soft/40 bg-white text-ink placeholder:text-ink-soft/60"
           />
         </div>
 

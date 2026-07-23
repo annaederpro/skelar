@@ -52,6 +52,7 @@ export function SettingsAccountSection({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Ім'я"
+          className="border-ink-soft/40 bg-white text-ink placeholder:text-ink-soft/60"
         />
 
         {error && <p className="text-[13px] text-coral">{error}</p>}
