@@ -3,23 +3,23 @@
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 const OCEAN_CSS = `
-.lo-scene{position:absolute;inset:0;overflow:hidden;background:linear-gradient(180deg,#2E6E7A 0%,#3E8E9C 55%,#8FC6CD 100%)}
-.lo-rays{position:absolute;inset:0;opacity:.4;pointer-events:none;
-  background:linear-gradient(115deg,rgba(255,255,255,.3) 0 6%,transparent 12% 22%,rgba(255,255,255,.2) 24% 30%,transparent 34%)}
+.lo-scene{position:absolute;inset:0;overflow:hidden;background:linear-gradient(180deg,#BFE6E8 0%,#9CD2D8 60%,#8FC6CD 100%)}
+.lo-rays{position:absolute;inset:0;opacity:.3;pointer-events:none;
+  background:linear-gradient(115deg,rgba(255,255,255,.5) 0 6%,transparent 12% 22%,rgba(255,255,255,.35) 24% 30%,transparent 34%)}
 @keyframes lo-swim-r{from{left:-10%}to{left:110%}}
 @keyframes lo-swim-l{from{left:110%}to{left:-10%}}
 .lo-bob{animation:lo-bob 3.4s ease-in-out infinite}
 @keyframes lo-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.lo-bubble{position:absolute;bottom:-24px;border-radius:50%;background:rgba(255,255,255,.4);animation:lo-bubble linear infinite}
-@keyframes lo-bubble{0%{transform:translateY(0) scale(.6);opacity:0}12%{opacity:.6}100%{transform:translateY(-70vh) scale(1);opacity:0}}
+.lo-bubble{position:absolute;bottom:-24px;border-radius:50%;background:rgba(46,110,122,.16);animation:lo-bubble linear infinite}
+@keyframes lo-bubble{0%{transform:translateY(0) scale(.6);opacity:0}12%{opacity:1}100%{transform:translateY(-70vh) scale(1);opacity:0}}
 `;
 
 const FISH_LANES = [
-  { top: "20%", restLeft: 15, dur: 26, delay: 0, dir: 1 as const, size: 30, fill: "#E7936F", opacity: 0.85 },
-  { top: "58%", restLeft: 72, dur: 32, delay: 4, dir: -1 as const, size: 24, fill: "#B4E0DE", opacity: 0.7 },
-  { top: "38%", restLeft: 40, dur: 22, delay: 9, dir: 1 as const, size: 18, fill: "#F3C89A", opacity: 0.5 },
-  { top: "72%", restLeft: 25, dur: 30, delay: 2, dir: -1 as const, size: 34, fill: "#DF8464", opacity: 0.9 },
-  { top: "14%", restLeft: 60, dur: 36, delay: 12, dir: 1 as const, size: 20, fill: "#9FC7C9", opacity: 0.45 },
+  { top: "20%", restLeft: 15, dur: 26, delay: 0, dir: 1 as const, size: 30, fill: "#DF8464", opacity: 0.85 },
+  { top: "58%", restLeft: 72, dur: 32, delay: 4, dir: -1 as const, size: 24, fill: "#2E6E7A", opacity: 0.55 },
+  { top: "38%", restLeft: 40, dur: 22, delay: 9, dir: 1 as const, size: 18, fill: "#B98AC0", opacity: 0.5 },
+  { top: "72%", restLeft: 25, dur: 30, delay: 2, dir: -1 as const, size: 34, fill: "#3E8E9C", opacity: 0.8 },
+  { top: "14%", restLeft: 60, dur: 36, delay: 12, dir: 1 as const, size: 20, fill: "#E7936F", opacity: 0.5 },
 ];
 
 function FishSilhouette({ size, fill }: { size: number; fill: string }) {

@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Waves } from "lucide-react";
+import { Waves, Volume2, VolumeX } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { CelebrationModal } from "@/components/gentle/celebration-modal";
 import { EFFORT_WORD, PRIORITY_BUCKET_LABEL, formatDuration, type EnergyLevel, type PriorityBucket } from "@/types/gentle";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
+import { useOceanNoise } from "@/lib/ocean-noise";
 import { cn } from "@/lib/utils";
 
 interface SampleTask {
@@ -42,6 +43,7 @@ const RADIUS = 70;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export function LandingFocusDemo() {
+  const oceanNoise = useOceanNoise();
   const [selectedMin, setSelectedMin] = useState<number | null>(null);
   const [poolIndex, setPoolIndex] = useState(0);
   const [sessionOpen, setSessionOpen] = useState(false);
@@ -100,15 +102,29 @@ export function LandingFocusDemo() {
   return (
     <section className="bg-paper px-6 py-20">
       <ScrollReveal className="mx-auto max-w-md">
-        <h2 className="text-center font-heading text-[26px] font-semibold text-ink">Фокус зараз</h2>
+        <h2 className="text-center font-heading text-[26px] font-semibold text-ink">Фокус — з шумом моря</h2>
         <p className="mt-2 text-center text-[14.5px] text-ink-soft">
-          Скажи, скільки в тебе часу й сил — отримаєш одну задачу, а не весь список.
+          Скажи, скільки в тебе часу й сил — отримаєш одну задачу, а не весь список. Увімкни шум моря, щоб зосередитись без поспіху.
         </p>
 
         <div className="relative mt-6 overflow-hidden rounded-[24px] bg-gradient-to-br from-sea to-sea-deep p-[18px] text-white shadow-[0_10px_26px_rgba(46,110,122,.32)]">
-          <div className="mb-0.5 flex items-center gap-2">
-            <Waves className="size-5" aria-hidden />
-            <span className="font-heading text-[18px] font-semibold">Спробуй прямо тут</span>
+          <div className="mb-0.5 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Waves className="size-5" aria-hidden />
+              <span className="font-heading text-[18px] font-semibold">Спробуй прямо тут</span>
+            </div>
+            <button
+              type="button"
+              onClick={oceanNoise.toggle}
+              aria-pressed={oceanNoise.isPlaying}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-bold transition-colors",
+                oceanNoise.isPlaying ? "bg-white text-sea-deep" : "bg-white/15 text-white hover:bg-white/25",
+              )}
+            >
+              {oceanNoise.isPlaying ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
+              Шум моря
+            </button>
           </div>
           <p className="mb-3.5 text-[13px] leading-relaxed text-white/85">Скільки в тебе вільного часу?</p>
 

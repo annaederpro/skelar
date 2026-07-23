@@ -25,29 +25,18 @@ export function LandingHeader() {
         solid ? "bg-paper/90 shadow-sm backdrop-blur-md" : "bg-transparent",
       )}
     >
-      <div
-        className={cn(
-          "mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-3.5",
-          solid ? "text-ink" : "text-white",
-        )}
-      >
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-3.5 text-ink">
         <Wordmark />
         <nav className="flex items-center gap-4">
           <Link
             href="/login"
-            className={cn(
-              "text-[13.5px] font-bold transition-colors",
-              solid ? "text-ink-soft hover:text-ink" : "text-white/85 hover:text-white",
-            )}
+            className="text-[13.5px] font-bold text-ink-soft transition-colors hover:text-ink"
           >
             Увійти
           </Link>
           <Link
             href="/login?mode=signup"
-            className={cn(
-              "rounded-full px-4 py-2 text-[13.5px] font-extrabold transition-colors",
-              solid ? "bg-sea text-white hover:bg-sea-deep" : "bg-white text-sea-deep hover:bg-white/90",
-            )}
+            className="rounded-full bg-sea px-4 py-2 text-[13.5px] font-extrabold text-white transition-colors hover:bg-sea-deep"
           >
             Спробувати
           </Link>

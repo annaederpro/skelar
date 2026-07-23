@@ -8,7 +8,7 @@ export function LandingPhilosophy() {
           coralQ не карає за пропущений день і не веде рахунок провалам.
         </p>
         <p className="mt-4 text-[15px] leading-relaxed text-white/85 sm:text-[17px]">
-          Ти обираєш, скільки маєш сил зараз, — застосунок підбирає задачу під це, а не навпаки.
+          Ти обираєш, скільки маєш сил зараз, застосунок підбирає задачу під це, а не навпаки.
         </p>
       </ScrollReveal>
     </section>
