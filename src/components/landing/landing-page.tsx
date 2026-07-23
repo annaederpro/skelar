@@ -17,7 +17,7 @@ export function LandingPage() {
       <LandingFlow />
       <LandingCaptureDemo />
       <p className="mx-auto max-w-md px-6 py-10 text-center text-[15px] font-bold text-ink-soft">
-        Це основа. А ще coralQ додає трохи магії, щоб було приємно:
+        Це лише основа. А ще coralQ додає дрібку магії, щоб робота була в задоволення:
       </p>
       <LandingFocusDemo />
       <LandingAquariumDemo />

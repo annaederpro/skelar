@@ -110,9 +110,9 @@ export function LandingFocusDemo() {
   return (
     <section className="bg-paper px-6 py-20">
       <ScrollReveal className="mx-auto max-w-md">
-        <h2 className="text-center font-heading text-[26px] font-semibold text-ink">Фокус — з шумом моря</h2>
+        <h2 className="text-center font-heading text-[26px] font-semibold text-ink">Фокус під шум моря</h2>
         <p className="mt-2 text-center text-[14.5px] text-ink-soft">
-          Скажи, скільки в тебе часу й сил — отримаєш одну задачу, а не весь список. Увімкни шум моря, щоб зосередитись без поспіху.
+          Обери, скільки в тебе часу та ресурсів — і отримай лише одну задачу замість хаосу зі списків. Увімкни шум океану та фокусуйся без метушні.
         </p>
 
         <div className="relative mt-6 overflow-hidden rounded-[24px] bg-gradient-to-br from-sea to-sea-deep p-[18px] text-white shadow-[0_10px_26px_rgba(46,110,122,.32)]">
