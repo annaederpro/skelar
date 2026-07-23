@@ -69,7 +69,7 @@ function nextDayIso(iso: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-function buildConfirmation(task: DbTask): string {
+function describeTask(task: DbTask): string {
   const today = getAppToday();
   const parts = [`«${task.title}»`];
   if (task.due_date) {
@@ -90,7 +90,33 @@ function buildConfirmation(task: DbTask): string {
   if (priorityBucket(task.priority) === "high") {
     parts.push("важливо");
   }
-  return `✅ Додано: ${parts.join(" · ")}`;
+  return parts.join(" · ");
+}
+
+// Ukrainian count-noun agreement for "задача": 1 → задачу, 2-4 → задачі
+// (except the 12-14 exception), everything else → задач.
+function pluralizeTasks(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "задачу";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "задачі";
+  return "задач";
+}
+
+// `attemptedCount` may exceed `tasks.length` if some inserts failed (rare,
+// independent per-row inserts) — that's reported as a trailing note rather
+// than failing the whole confirmation.
+function buildConfirmation(tasks: DbTask[], attemptedCount: number): string {
+  const notSaved = attemptedCount - tasks.length;
+  const failureNote = notSaved > 0 ? `\n⚠️ ${notSaved} не вдалося зберегти, спробуй ще раз.` : "";
+
+  if (tasks.length === 1) {
+    return `✅ Додано: ${describeTask(tasks[0])}${failureNote}`;
+  }
+
+  const header = `✅ Додано ${tasks.length} ${pluralizeTasks(tasks.length)}:`;
+  const lines = tasks.map((task) => `· ${describeTask(task)}`);
+  return [header, ...lines].join("\n") + failureNote;
 }
 
 // Runs inside after(): parse raw text into a task, insert it, confirm in chat.
@@ -107,21 +133,28 @@ async function createTaskFromText(
     return;
   }
 
-  const result = await insertTaskForUser(admin, userId, {
-    title: parsed.title,
-    energyLevel: parsed.energyLevel ?? 1,
-    durationMinutes: parsed.durationMinutes ?? 30,
-    projectId: parsed.projectId,
-    priority: parsed.priority ?? 4,
-    dueDate: parsed.dueDate,
-    dueTime: parsed.dueTime,
-  });
-  if ("error" in result) {
+  const insertedTasks: DbTask[] = [];
+  for (const task of parsed.tasks) {
+    const result = await insertTaskForUser(admin, userId, {
+      title: task.title,
+      energyLevel: task.energyLevel ?? 1,
+      durationMinutes: task.durationMinutes ?? 30,
+      projectId: task.projectId,
+      priority: task.priority ?? 4,
+      dueDate: task.dueDate,
+      dueTime: task.dueTime,
+    });
+    if ("task" in result) {
+      insertedTasks.push(result.task);
+    }
+  }
+
+  if (insertedTasks.length === 0) {
     await ctx.api.sendMessage(chatId, MSG_GENERIC_FAILED);
     return;
   }
 
-  await ctx.api.sendMessage(chatId, buildConfirmation(result.task));
+  await ctx.api.sendMessage(chatId, buildConfirmation(insertedTasks, parsed.tasks.length));
 }
 
 export function createBot(): Bot {

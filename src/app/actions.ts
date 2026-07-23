@@ -391,7 +391,13 @@ export async function parseTaskWithAI(rawText: string): Promise<ParseTaskResult>
     return { ok: false, rawText };
   }
 
-  return parseTaskForUser(supabase, user.id, rawText);
+  const result = await parseTaskForUser(supabase, user.id, rawText);
+  if (!result.ok) {
+    return result;
+  }
+  // The web quick-add dialog only ever shows one task's fields — if the
+  // input described more than one intent, only the first is used.
+  return { ok: true, ...result.tasks[0] };
 }
 
 export async function generateTelegramLinkCode(

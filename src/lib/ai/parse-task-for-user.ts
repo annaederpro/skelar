@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { parseTaskWithOpenRouter, type ParseTaskResult } from "@/lib/ai/parse-task";
+import { parseTaskWithOpenRouter, type ParseTaskListResult } from "@/lib/ai/parse-task";
 import { getAppToday } from "@/lib/date";
 
 /**
@@ -11,7 +11,7 @@ export async function parseTaskForUser(
   supabase: SupabaseClient,
   userId: string,
   rawText: string,
-): Promise<ParseTaskResult> {
+): Promise<ParseTaskListResult> {
   const { data: projects } = await supabase
     .from("projects")
     .select("id, name")
