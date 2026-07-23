@@ -6,7 +6,7 @@ export function LandingHero() {
     <section className="relative flex min-h-dvh items-center justify-center overflow-hidden">
       <LandingOceanScene />
       <div className="relative z-10 flex flex-col items-center gap-5 px-6 text-center">
-        <h1 className="max-w-lg font-heading text-[32px] font-semibold leading-tight text-ink sm:text-[42px]">
+        <h1 className="max-w-2xl font-heading text-[32px] font-semibold leading-tight text-ink sm:text-[42px]">
           Лагідний таск-менеджер, що росте разом із тобою
         </h1>
         <p className="max-w-md text-[16px] leading-relaxed text-sea-deep sm:text-[18px]">
