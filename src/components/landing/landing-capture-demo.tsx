@@ -26,10 +26,10 @@ export function LandingCaptureDemo() {
   return (
     <section className="bg-paper px-6 py-20">
       <ScrollReveal className="mx-auto max-w-3xl">
-        <h2 className="text-center font-heading text-[26px] font-semibold text-ink">Capture — двома способами</h2>
+        <h2 className="text-center font-heading text-[26px] font-semibold text-ink">Фіксуй думки туди, де зручно</h2>
         <p className="mt-2 text-center text-[14.5px] text-ink-soft">
-          Додай задачу прямо в застосунку — або скинь голосове чи текстове повідомлення в Telegram. Обирай, що
-          зручніше зараз.
+          Пиши в додатку або скидай голосові й текстові нотатки в Telegram-бот. coralQ сам перетворить їх на готові
+          задачі.
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
