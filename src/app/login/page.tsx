@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AuthForm } from "@/components/gentle/auth-form";
 import { Wordmark } from "@/components/gentle/wordmark";
 
@@ -8,7 +9,9 @@ export default function LoginPage() {
         <Wordmark />
         <p className="mt-1 text-sm text-muted-foreground">Лагідний таск-менеджер</p>
       </div>
-      <AuthForm />
+      <Suspense fallback={<div className="h-[268px]" />}>
+        <AuthForm />
+      </Suspense>
     </main>
   );
 }

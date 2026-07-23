@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { signIn, signUp, type AuthFormState } from "@/app/actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,10 @@ import { Label } from "@/components/ui/label";
 const initialState: AuthFormState = { error: null, message: null };
 
 export function AuthForm() {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<"signin" | "signup">(
+    searchParams.get("mode") === "signup" ? "signup" : "signin",
+  );
   const action = mode === "signin" ? signIn : signUp;
   const [state, formAction, isPending] = useActionState(action, initialState);
 
