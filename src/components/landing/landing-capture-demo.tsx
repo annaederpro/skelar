@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
@@ -107,31 +108,15 @@ export function LandingCaptureDemo() {
             <div className="mb-2.5 text-center text-[11.5px] font-extrabold uppercase tracking-wide text-ink-soft">
               У Telegram
             </div>
-            <div className="flex min-h-[150px] flex-col justify-end gap-2.5 rounded-[20px] border border-line bg-card p-4 shadow-[0_4px_16px_rgba(46,63,61,.08)]">
-              <div className="ml-auto flex max-w-[85%] items-center gap-2 rounded-2xl rounded-br-sm bg-sea px-3.5 py-2.5 text-white">
-                <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-white/25 text-[10px]">
-                  ▶
-                </span>
-                <span className="flex items-end gap-[2.5px]" aria-hidden>
-                  {[6, 12, 8, 16, 5, 11, 7].map((h, i) => (
-                    <span key={i} className="w-[2.5px] rounded-sm bg-white/85" style={{ height: h }} />
-                  ))}
-                </span>
-                <span className="text-[12.5px] font-bold">0:16</span>
-              </div>
-              {(stage === "processing" || stage === "done") && (
-                <div className="mr-auto flex items-center gap-1.5 rounded-2xl rounded-bl-sm bg-line px-3.5 py-2.5 text-ink-soft">
-                  <span>✨</span>
-                  <span className="text-[12.5px] font-bold">
-                    {stage === "processing" ? "Розпізнаю…" : "Готово"}
-                  </span>
-                </div>
-              )}
-              {stage === "done" && (
-                <div className="mr-auto rounded-2xl rounded-bl-sm border border-line bg-card px-3.5 py-2.5 text-[13px] font-semibold text-ink shadow-[0_2px_10px_rgba(46,63,61,.06)]">
-                  ✅ Додано: «Сходити за покупками» · 30 хв · легка
-                </div>
-              )}
+            <div className="overflow-hidden rounded-[20px] border border-line bg-card shadow-[0_4px_16px_rgba(46,63,61,.08)]">
+              <Image
+                src="/screenshots/telegram-capture.png"
+                alt="Реальне листування з Telegram-ботом coralQ: голосове повідомлення і підтвердження «Додано: «прочитати книжку» · 30 хв · легка»"
+                width={1320}
+                height={426}
+                sizes="(min-width: 640px) 45vw, 90vw"
+                className="h-auto w-full"
+              />
             </div>
           </div>
         </div>
