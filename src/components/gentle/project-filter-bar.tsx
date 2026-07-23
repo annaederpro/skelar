@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Check, Pencil, Trash2, FolderOpen } from "lucide-react";
+import { Plus, Check, Pencil, Trash2, FolderOpen, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { deleteProject, updateProjectName } from "@/app/actions";
 import {
@@ -16,8 +16,12 @@ import {
 // "all" shows everything, "none" shows tasks without a project, otherwise a project id.
 export type ProjectFilter = "all" | "none" | string;
 
-// "Виконані" isolate toggle — only wired up on "Всі задачі" (see TaskView).
-export type StatusFilter = "all" | "completed";
+// "Виконані" chip — only wired up on "Всі задачі" (see TaskView). Cycles
+// all -> completed (isolate done tasks) -> active (hide done tasks) -> all.
+export type StatusFilter = "all" | "completed" | "active";
+
+const nextStatusFilter = (current: StatusFilter): StatusFilter =>
+  current === "all" ? "completed" : current === "completed" ? "active" : "all";
 
 // "Telegram" isolate toggle — only wired up on "Всі задачі" (see TaskView).
 export type SourceFilter = "all" | "telegram";
@@ -218,16 +222,19 @@ export function ProjectFilterBar({
             )}
           </>
         )}
-        {onSelectStatusFilter && (
+        {onSelectStatusFilter && statusFilter && (
           <button
             type="button"
-            onClick={() =>
-              onSelectStatusFilter(statusFilter === "completed" ? "all" : "completed")
-            }
-            aria-pressed={statusFilter === "completed"}
-            className={chipClass(statusFilter === "completed")}
+            onClick={() => onSelectStatusFilter(nextStatusFilter(statusFilter))}
+            aria-pressed={statusFilter !== "all"}
+            className={cn(chipClass(statusFilter !== "all"), "flex items-center gap-1")}
           >
-            Виконані
+            {statusFilter === "active" ? (
+              <EyeOff className="size-3.5" />
+            ) : statusFilter === "completed" ? (
+              <Check className="size-3.5" />
+            ) : null}
+            {statusFilter === "active" ? "Без виконаних" : "Виконані"}
           </button>
         )}
         {onSelectSourceFilter && (

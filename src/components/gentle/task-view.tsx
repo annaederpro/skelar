@@ -80,6 +80,8 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
     if (isAllTasksTab) {
       if (statusFilter === "completed") {
         list = list.filter((task) => task.status === "completed");
+      } else if (statusFilter === "active") {
+        list = list.filter((task) => task.status !== "completed");
       }
       if (sourceFilter === "telegram") {
         list = list.filter((task) => task.source === "telegram");
@@ -203,9 +205,11 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
         emptyMessage={
           isAllTasksTab && statusFilter === "completed"
             ? "Ще немає виконаних задач 🌿"
-            : projectFilter !== "all" && tasks.length > 0
-              ? "У цьому проєкті поки порожньо 🌊"
-              : emptyMessage
+            : isAllTasksTab && statusFilter === "active"
+              ? "Усі задачі виконано 🌿"
+              : projectFilter !== "all" && tasks.length > 0
+                ? "У цьому проєкті поки порожньо 🌊"
+                : emptyMessage
         }
       />
       <EditTaskDialog
