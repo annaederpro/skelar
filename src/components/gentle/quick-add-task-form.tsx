@@ -174,7 +174,7 @@ export function QuickAddTaskForm({
         />
         {isListening && (
           <p className="text-center text-xs font-semibold text-coral">
-            Слухаю… відпусти кнопку, коли договориш
+            Слухаю… натисни ще раз, щоб зупинити
           </p>
         )}
         <div className="flex items-center gap-2">
@@ -198,16 +198,11 @@ export function QuickAddTaskForm({
               variant="outline"
               size="icon-lg"
               disabled={isParsing}
-              onPointerDown={handleMicPress}
-              onPointerUp={handleMicRelease}
-              onPointerLeave={handleMicRelease}
-              onPointerCancel={handleMicRelease}
-              onContextMenu={(e) => e.preventDefault()}
+              onClick={isListening ? handleMicRelease : handleMicPress}
               className={cn(
-                "touch-none select-none",
                 isListening && "animate-pulse border-coral bg-coral text-white hover:bg-coral",
               )}
-              aria-label="Утримуй, щоб наговорити задачу"
+              aria-label="Натисни, щоб наговорити задачу"
             >
               <Mic className="size-4" />
             </Button>
