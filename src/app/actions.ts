@@ -518,3 +518,27 @@ export async function updatePassword(
 
   return { ok: true };
 }
+
+export async function updateDailyReminderPreference(
+  enabled: boolean,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Сесія закінчилась, увійди ще раз." };
+  }
+
+  const { error } = await supabase
+    .from("users")
+    .update({ daily_reminder_enabled: enabled })
+    .eq("id", user.id);
+
+  if (error) {
+    return { error: "Не вдалося зберегти, спробуй ще раз." };
+  }
+
+  return { ok: true };
+}

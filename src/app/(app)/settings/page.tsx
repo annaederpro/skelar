@@ -12,7 +12,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("telegram_chat_id, display_name")
+    .select("telegram_chat_id, display_name, daily_reminder_enabled")
     .eq("id", userId)
     .single();
 
@@ -24,7 +24,10 @@ export default async function SettingsPage() {
         initialDisplayName={profile?.display_name ?? null}
       />
       <SettingsPasswordSection />
-      <SettingsTelegramSection initiallyConnected={Boolean(profile?.telegram_chat_id)} />
+      <SettingsTelegramSection
+        initiallyConnected={Boolean(profile?.telegram_chat_id)}
+        initialDailyReminderEnabled={profile?.daily_reminder_enabled ?? false}
+      />
     </div>
   );
 }
