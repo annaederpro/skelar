@@ -31,7 +31,8 @@ export function LandingFlow() {
       <ScrollReveal className="mx-auto max-w-4xl">
         <h2 className="text-center font-heading text-[26px] font-semibold text-ink">Як це працює</h2>
         <p className="mt-2 text-center text-[14.5px] text-ink-soft">
-          coralQ — це таск-менеджер. Простий цикл: вивали усе з голови, дай ШІ розкласти на задачі, виконуй план на
+          <span className="text-[16px] font-bold text-ink">coralQ</span> — це таск-менеджер із простим циклом:
+          звільни голову від думок, дозволь ШІ впорядкувати задачі та виконуй рівно стільки, скільки в силах
           сьогодні.
         </p>
         <div className="mt-8 flex flex-col items-center gap-2.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-center">
