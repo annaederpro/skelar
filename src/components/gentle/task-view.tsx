@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { TaskList } from "@/components/gentle/task-list";
 import {
@@ -12,6 +12,7 @@ import {
 import { EditTaskDialog } from "@/components/gentle/edit-task-dialog";
 import { toggleTaskComplete, createProject, releaseTask, restoreTask } from "@/app/actions";
 import { ReleaseToast } from "@/components/gentle/release-toast";
+import { CompletionToast, pickCompletionPhrase } from "@/components/gentle/completion-toast";
 import { useResourceStatus } from "@/context/resource-status-context";
 import { useProjects } from "@/context/projects-context";
 import { priorityBucket, compareTasksForAllTasksTab } from "@/types/gentle";
@@ -91,6 +92,9 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
     return list;
   }, [tasks, applyDepletedFilter, projectFilter, isAllTasksTab, statusFilter, sourceFilter]);
 
+  const [completion, setCompletion] = useState<{ key: number; message: string } | null>(null);
+  const lastPhraseRef = useRef<string | null>(null);
+
   const handleToggleComplete = (task: DbTask) => {
     const nextStatus = task.status === "completed" ? "todo" : "completed";
     const removeOnComplete = isTodayTab && nextStatus === "completed";
@@ -101,6 +105,11 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
       setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: nextStatus } : t)));
     }
     setErrorMessage(null);
+    if (nextStatus === "completed") {
+      const message = pickCompletionPhrase(lastPhraseRef.current);
+      lastPhraseRef.current = message;
+      setCompletion((prev) => ({ key: (prev?.key ?? 0) + 1, message }));
+    }
     startTransition(async () => {
       const result = await toggleTaskComplete(task.id, nextStatus);
       if ("error" in result) {
@@ -110,6 +119,7 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
           setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: task.status } : t)));
         }
         setErrorMessage(result.error);
+        setCompletion(null);
         return;
       }
       router.refresh();
@@ -215,6 +225,7 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
         onUndo={handleUndoRelease}
         onDismiss={() => setReleasedTask(null)}
       />
+      <CompletionToast toast={completion} />
     </div>
   );
 }
