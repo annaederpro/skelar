@@ -152,6 +152,7 @@ async function createTaskFromText(
       priority: task.priority ?? 4,
       dueDate: task.dueDate,
       dueTime: task.dueTime,
+      source: "telegram",
     });
     if ("task" in result) {
       insertedTasks.push(result.task);

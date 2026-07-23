@@ -19,6 +19,9 @@ export type ProjectFilter = "all" | "none" | string;
 // "Виконані" isolate toggle — only wired up on "Всі задачі" (see TaskView).
 export type StatusFilter = "all" | "completed";
 
+// "Telegram" isolate toggle — only wired up on "Всі задачі" (see TaskView).
+export type SourceFilter = "all" | "telegram";
+
 interface ProjectFilterBarProps {
   projects: { id: string; name: string }[];
   projectFilter: ProjectFilter;
@@ -31,6 +34,9 @@ interface ProjectFilterBarProps {
   // Optional — when provided, a "Виконані" chip renders at the end of the row.
   statusFilter?: StatusFilter;
   onSelectStatusFilter?: (filter: StatusFilter) => void;
+  // Optional — when provided, a "Telegram" chip renders next to "Виконані".
+  sourceFilter?: SourceFilter;
+  onSelectSourceFilter?: (filter: SourceFilter) => void;
 }
 
 export const chipClass = (isActive: boolean) =>
@@ -55,6 +61,8 @@ export function ProjectFilterBar({
   onCreateProject,
   statusFilter,
   onSelectStatusFilter,
+  sourceFilter,
+  onSelectSourceFilter,
 }: ProjectFilterBarProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -220,6 +228,18 @@ export function ProjectFilterBar({
             className={chipClass(statusFilter === "completed")}
           >
             Виконані
+          </button>
+        )}
+        {onSelectSourceFilter && (
+          <button
+            type="button"
+            onClick={() =>
+              onSelectSourceFilter(sourceFilter === "telegram" ? "all" : "telegram")
+            }
+            aria-pressed={sourceFilter === "telegram"}
+            className={chipClass(sourceFilter === "telegram")}
+          >
+            Telegram
           </button>
         )}
         <button

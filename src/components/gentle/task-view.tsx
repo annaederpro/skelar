@@ -7,6 +7,7 @@ import {
   ProjectFilterBar,
   type ProjectFilter,
   type StatusFilter,
+  type SourceFilter,
 } from "@/components/gentle/project-filter-bar";
 import { EditTaskDialog } from "@/components/gentle/edit-task-dialog";
 import { toggleTaskComplete, createProject, releaseTask, restoreTask } from "@/app/actions";
@@ -27,6 +28,7 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [projectFilter, setProjectFilter] = useState<ProjectFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [editingTask, setEditingTask] = useState<DbTask | null>(null);
@@ -78,13 +80,16 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
       if (statusFilter === "completed") {
         list = list.filter((task) => task.status === "completed");
       }
+      if (sourceFilter === "telegram") {
+        list = list.filter((task) => task.source === "telegram");
+      }
       // .slice() first: list may still be the same array reference as
       // `tasks` (no depleted/project filter applied) — sorting in place
       // would mutate component state.
       list = list.slice().sort(compareTasksForAllTasksTab);
     }
     return list;
-  }, [tasks, applyDepletedFilter, projectFilter, isAllTasksTab, statusFilter]);
+  }, [tasks, applyDepletedFilter, projectFilter, isAllTasksTab, statusFilter, sourceFilter]);
 
   const handleToggleComplete = (task: DbTask) => {
     const nextStatus = task.status === "completed" ? "todo" : "completed";
@@ -170,6 +175,8 @@ export function TaskView({ initialTasks, emptyMessage }: TaskViewProps) {
         onCreateProject={handleCreateProject}
         statusFilter={isAllTasksTab ? statusFilter : undefined}
         onSelectStatusFilter={isAllTasksTab ? setStatusFilter : undefined}
+        sourceFilter={isAllTasksTab ? sourceFilter : undefined}
+        onSelectSourceFilter={isAllTasksTab ? setSourceFilter : undefined}
       />
 
       {errorMessage && (

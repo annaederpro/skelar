@@ -9,6 +9,7 @@ export type InsertTaskInput = {
   priority?: Priority;
   dueDate?: string | null;
   dueTime?: string | null;
+  source?: "app" | "telegram";
 };
 
 /**
@@ -45,6 +46,7 @@ export async function insertTaskForUser(
       priority: input.priority ?? 4,
       due_date: input.dueDate ?? null,
       due_time: input.dueDate ? (input.dueTime ?? null) : null,
+      source: input.source ?? "app",
     })
     .select()
     .single();

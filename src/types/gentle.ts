@@ -46,6 +46,8 @@ export interface DbTask {
   // Added by migration 0005 (Task Release). Null = active task; set = soft-
   // deleted, recoverable from "Кошик" until restored (released_at cleared).
   released_at: string | null;
+  // Added by migration 0008. Set once at creation; not backfilled for older rows.
+  source: "app" | "telegram";
 }
 
 // "25" → "25 хв", "180" → "3 год", "90" → "1 год 30 хв"
