@@ -45,7 +45,7 @@ export function SettingsTelegramSection({
         <button
           type="button"
           onClick={disconnect}
-          className="self-start rounded-full bg-paper px-3 py-1.5 text-[13px] font-bold text-ink-soft"
+          className="self-start rounded-full bg-sea-deep px-3 py-1.5 text-[13px] font-bold text-white"
         >
           Відключити
         </button>

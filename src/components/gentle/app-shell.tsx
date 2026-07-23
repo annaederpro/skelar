@@ -85,6 +85,12 @@ export function AppShell({
   openTasks,
   children,
 }: AppShellProps) {
+  const pathname = usePathname();
+  // Settings has no task list to add to, and the FAB visually overlaps the
+  // page's own controls (e.g. the daily reminder toggle) at that scroll
+  // position — hide it there.
+  const showFab = !pathname.startsWith("/settings");
+
   return (
     <ResourceStatusProvider initialResourceStatus={initialResourceStatus}>
       <ProjectsProvider projects={projects}>
@@ -93,7 +99,7 @@ export function AppShell({
           <div className="flex-1 px-4 py-4">{children}</div>
           <BottomNav todayCount={todayCount} />
         </div>
-        <Fab projects={projects} />
+        {showFab && <Fab projects={projects} />}
       </ProjectsProvider>
     </ResourceStatusProvider>
   );
