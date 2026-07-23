@@ -20,7 +20,10 @@ export function BottomNav({ todayCount }: BottomNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky bottom-0 z-30 grid grid-cols-4 border-t border-line bg-paper/90 px-2 pb-3.5 pt-2.5 backdrop-blur-md">
+    <nav
+      className="sticky bottom-0 z-30 grid grid-cols-4 border-t border-line bg-paper/90 px-2 pt-2.5 backdrop-blur-md"
+      style={{ paddingBottom: "calc(0.875rem + env(safe-area-inset-bottom))" }}
+    >
       {TABS.map(({ href, label, icon: Icon }) => {
         const isActive = pathname === href || pathname.startsWith(`${href}/`);
         return (

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Nunito_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -21,6 +21,10 @@ export const metadata: Metadata = {
     title: "coralQ",
     statusBarStyle: "default",
   },
+};
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
