@@ -34,10 +34,10 @@ export function LandingFlow() {
           coralQ — це таск-менеджер. Простий цикл: вивали усе з голови, дай ШІ розкласти на задачі, виконуй план на
           сьогодні.
         </p>
-        <div className="mt-8 flex flex-wrap items-start justify-center gap-2.5">
+        <div className="mt-8 flex flex-col items-center gap-2.5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-center">
           {STEPS.map((step, i) => (
-            <div key={step.n} className="flex items-start gap-2.5">
-              <div className="w-[210px] max-w-[250px] rounded-[20px] border border-line bg-paper p-[22px_18px]">
+            <div key={step.n} className="contents">
+              <div className="w-full max-w-[320px] rounded-[20px] border border-line bg-paper p-[22px_18px] sm:w-[210px]">
                 <span className="flex size-7 items-center justify-center rounded-full bg-sea-soft font-heading text-[13px] font-semibold text-sea-deep">
                   {step.n}
                 </span>
@@ -52,14 +52,17 @@ export function LandingFlow() {
                       src={step.screenshot}
                       alt={`Реальний скріншот екрана «${step.en}» у coralQ`}
                       fill
-                      sizes="210px"
+                      sizes="(min-width: 640px) 210px, 320px"
                       className="object-cover object-top"
                     />
                   </div>
                 )}
               </div>
               {i < STEPS.length - 1 && (
-                <span className="flex h-[54px] items-center text-[22px] text-ink-soft" aria-hidden>
+                <span
+                  className="flex h-9 rotate-90 items-center justify-center text-[22px] text-ink-soft sm:h-[54px] sm:rotate-0"
+                  aria-hidden
+                >
                   →
                 </span>
               )}
