@@ -17,6 +17,9 @@ export interface DbUser {
   telegram_link_code_expires_at: string | null;
   // Added by migration 0007. Null means the user hasn't set a name yet.
   display_name: string | null;
+  // Added by migration 0009. Opt-in, default false — no reminder is sent
+  // unless the user turns this on in Settings.
+  daily_reminder_enabled: boolean;
   created_at: string;
 }
 
@@ -48,6 +51,10 @@ export interface DbTask {
   released_at: string | null;
   // Added by migration 0008. Set once at creation; not backfilled for older rows.
   source: "app" | "telegram";
+  // Added by migration 0009. Set only for source = 'telegram' tasks, right
+  // after the bot sends that task's "✅ Додано" confirmation. Lets a later
+  // reply/👍 on that exact message be traced back to this task.
+  telegram_confirmation_message_id: number | null;
 }
 
 // "25" → "25 хв", "180" → "3 год", "90" → "1 год 30 хв"
