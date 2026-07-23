@@ -17,6 +17,10 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "coralQ",
   description: "Бережний таск-менеджер, що росте разом із тобою",
+  appleWebApp: {
+    title: "coralQ",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({
