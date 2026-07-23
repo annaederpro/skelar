@@ -299,6 +299,23 @@ export function createBot(): Bot {
     });
   });
 
+  bot.on("message_reaction", async (ctx) => {
+    const { emojiAdded } = ctx.reactions();
+    if (!emojiAdded.includes("👍")) return;
+
+    const admin = createAdminClient();
+    const userId = await lookupLinkedUserId(admin, ctx.chat.id);
+    if (!userId) return;
+
+    const result = await tryCompleteFromMessage(admin, userId, ctx.messageReaction.message_id);
+    if (result === "not_found") return; // reaction on an unrelated message — stay silent
+
+    await ctx.api.sendMessage(
+      ctx.chat.id,
+      result === "completed" ? "✅ Зроблено!" : "Вже позначено готовим 🐠",
+    );
+  });
+
   // Note: bot.catch() is intentionally not used here — grammY only routes
   // through it from the long-polling handleUpdates() path. In webhook mode,
   // webhookCallback calls handleUpdate() directly, whose errors propagate to
