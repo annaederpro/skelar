@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const [{ data: profile }, { data: projects }, { count: todayCount }, { data: openTasks }] =
     await Promise.all([
-      supabase.from("users").select("current_resource_status").eq("id", userId).single(),
+      supabase.from("users").select("current_resource_status, display_name").eq("id", userId).single(),
       supabase
         .from("projects")
         .select("*")
@@ -46,6 +46,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <AppShell
       initialResourceStatus={(profile?.current_resource_status ?? "normal") as ResourceStatus}
+      displayName={profile?.display_name ?? null}
       projects={(projects ?? []) as DbProject[]}
       todayCount={todayCount ?? 0}
       openTasks={(openTasks ?? []) as DbTask[]}
