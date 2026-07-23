@@ -97,7 +97,7 @@ export function AquariumTank({ eggs, unlocked, swimmerCount }: AquariumTankProps
                 : { top: lane.top, left: `${lane.left}%` }
             }
           >
-            <div style={lane.dir < 0 ? { transform: "scaleX(-1)" } : undefined}>
+            <div style={lane.dir > 0 ? { transform: "scaleX(-1)" } : undefined}>
               <div
                 className={cn(isPlaying && "aq-bob")}
                 style={isPlaying ? { animationDuration: `${2.4 + (i % 4) * 0.4}s` } : undefined}
