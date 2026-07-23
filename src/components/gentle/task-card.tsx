@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Check, Folder, CalendarDays, Waves, Undo2 } from "lucide-react";
+import { Clock, Check, Folder, CalendarDays, CalendarPlus, Waves, Undo2 } from "lucide-react";
 import type { DbTask, EnergyLevel } from "@/types/gentle";
 import {
   EFFORT_WORD,
@@ -13,6 +13,7 @@ import {
 } from "@/types/gentle";
 import { getAppToday } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import { buildTaskIcs, downloadIcs, taskIcsFilename } from "@/lib/ics";
 
 interface TaskCardProps {
   task: DbTask;
@@ -160,6 +161,19 @@ export function TaskCard({
               <CalendarDays className="size-3.5" />
               {formatDueDate(task.due_date)}
               {task.due_time ? ` · ${formatDueTime(task.due_time)}` : null}
+              {!isCompleted && !isReleased && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadIcs(taskIcsFilename(task), buildTaskIcs(task));
+                  }}
+                  className="ml-0.5 flex items-center justify-center text-ink-soft/60 transition-colors hover:text-sea"
+                  aria-label="Додати до календаря"
+                >
+                  <CalendarPlus className="size-3.5" />
+                </button>
+              )}
             </span>
           )}
           {projectName && (
