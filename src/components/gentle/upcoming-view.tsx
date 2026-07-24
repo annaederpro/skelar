@@ -32,7 +32,6 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
   const projects = useProjects();
   const router = useRouter();
   const today = getAppToday();
-  const listTopRef = useRef<HTMLDivElement>(null);
 
   if (initialTasks !== syncedTasks) {
     setSyncedTasks(initialTasks);
@@ -66,7 +65,7 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
   const groupedUpcoming = useMemo(() => {
     const map = new Map<string, DbTask[]>();
     for (const task of visibleTasks) {
-      if (task.due_date === null || task.due_date <= today) continue;
+      if (task.due_date === null || task.due_date < today) continue;
       const group = map.get(task.due_date) ?? [];
       group.push(task);
       map.set(task.due_date, group);
@@ -77,10 +76,6 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
   const handleSelectDate = (date: string) => {
     if (date < today) {
       document.getElementById("overdue-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-    if (date === today) {
-      listTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     // Sparse list: if this exact date has no section, jump to the closest
@@ -200,7 +195,6 @@ export function UpcomingView({ initialTasks, emptyMessage }: UpcomingViewProps) 
               />
             </section>
           )}
-          <div ref={listTopRef} />
           {Array.from(groupedUpcoming.entries()).map(([date, dayTasks]) => (
             <section key={date} id={`day-${date}`} className="flex flex-col gap-2">
               <h2 className="px-1 text-[13px] font-bold text-ink-soft">

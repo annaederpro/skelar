@@ -39,10 +39,14 @@ export function formatMonthLabel(isoDate: string): string {
   return `${MONTH_FULL[Number(month) - 1]} ${year}`;
 }
 
-// "2026-07-22" → "22 лип · Завтра" (or "23 лип · четвер" for any other day)
+// "2026-07-22" → "22 лип · Сьогодні" (or "· Завтра" / "· четвер" for other days)
 export function formatDayHeader(isoDate: string, today: string): string {
   const [, month, day] = isoDate.split("-");
   const relative =
-    isoDate === addDays(today, 1) ? "Завтра" : WEEKDAY_FULL[mondayIndex(isoDate)];
+    isoDate === today
+      ? "Сьогодні"
+      : isoDate === addDays(today, 1)
+        ? "Завтра"
+        : WEEKDAY_FULL[mondayIndex(isoDate)];
   return `${Number(day)} ${MONTH_ABBR[Number(month) - 1]} · ${relative}`;
 }
