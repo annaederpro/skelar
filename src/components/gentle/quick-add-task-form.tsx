@@ -7,7 +7,7 @@ import type { DbProject, EnergyLevel, Priority } from "@/types/gentle";
 import { type DurationUnit, splitMinutesToDuration, parseDurationMinutes } from "@/types/gentle";
 import { TaskFieldsForm } from "@/components/gentle/task-fields-form";
 import { cn } from "@/lib/utils";
-import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import type { ParseTaskResult } from "@/lib/ai/parse-task";
 
 interface QuickAddTaskFormProps {
@@ -21,6 +21,7 @@ interface QuickAddTaskFormProps {
     dueTime: string | null;
   }) => void;
   onParseWithAI: (rawText: string) => Promise<ParseTaskResult>;
+  onTranscribeAudio: (formData: FormData) => Promise<{ text: string } | { error: string }>;
   disabledEnergyLevels?: EnergyLevel[];
   projects?: DbProject[];
 }
@@ -28,12 +29,14 @@ interface QuickAddTaskFormProps {
 export function QuickAddTaskForm({
   onAdd,
   onParseWithAI,
+  onTranscribeAudio,
   disabledEnergyLevels = [],
   projects = [],
 }: QuickAddTaskFormProps) {
   const [step, setStep] = useState<"input" | "review">("input");
   const [aiText, setAiText] = useState("");
   const [isParsing, setIsParsing] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
@@ -54,12 +57,9 @@ export function QuickAddTaskForm({
     setDurationUnit(unit);
   };
 
-  // Latest text, readable from speech callbacks without stale-closure issues.
+  // Latest text, readable without stale-closure issues.
   const aiTextRef = useRef("");
-  // Finalized speech chunks accumulate here; interim words render on top of it.
-  const finalTextRef = useRef("");
-  // Set on mic release so recognition's async end event triggers the parse.
-  const parseOnEndRef = useRef(false);
+  const [micError, setMicError] = useState<string | null>(null);
 
   const setText = (value: string) => {
     aiTextRef.current = value;
@@ -98,42 +98,47 @@ export function QuickAddTaskForm({
 
   const {
     isSupported: isMicSupported,
-    isListening,
-    start: startListening,
-    stop: stopListening,
-  } = useSpeechRecognition({
-    onResult: (chunk) => {
-      finalTextRef.current = `${finalTextRef.current} ${chunk}`.trim();
-      setText(finalTextRef.current);
-    },
-    onInterim: (interim) => {
-      setText(`${finalTextRef.current} ${interim}`.trim());
-    },
-    onEnd: () => {
-      if (parseOnEndRef.current) {
-        parseOnEndRef.current = false;
-        void runParse(aiTextRef.current);
-      }
-    },
-  });
+    isRecording,
+    start: startRecording,
+    stop: stopRecording,
+  } = useAudioRecorder();
 
-  const handleMicPress = () => {
-    if (isListening) return;
-    finalTextRef.current = aiTextRef.current.trim();
-    parseOnEndRef.current = false;
-    startListening();
+  const handleMicPress = async () => {
+    if (isRecording) return;
+    setMicError(null);
+    try {
+      await startRecording();
+    } catch {
+      setMicError("Дозволь доступ до мікрофона.");
+    }
   };
 
-  const handleMicRelease = () => {
-    if (!isListening) return;
-    parseOnEndRef.current = true;
-    stopListening();
+  const handleMicRelease = async () => {
+    if (!isRecording) return;
+    const blob = await stopRecording();
+    if (!blob) {
+      setMicError("Не вдалося записати голосове, спробуй ще раз.");
+      return;
+    }
+
+    setIsTranscribing(true);
+    const formData = new FormData();
+    formData.append("audio", blob, "voice.webm");
+    const result = await onTranscribeAudio(formData);
+    setIsTranscribing(false);
+
+    if ("error" in result) {
+      setMicError(result.error);
+      return;
+    }
+    setText(result.text);
+    void runParse(result.text);
   };
 
   const resetAll = () => {
     setStep("input");
     setText("");
-    finalTextRef.current = "";
+    setMicError(null);
     setAiNotice(null);
     setTitle("");
     setEnergyLevel(1);
@@ -172,17 +177,23 @@ export function QuickAddTaskForm({
           autoFocus
           className="w-full resize-none rounded-md border border-line bg-transparent px-3 py-2 text-sm"
         />
-        {isListening && (
+        {isRecording && (
           <p className="text-center text-xs font-semibold text-coral">
-            Слухаю… натисни ще раз, щоб зупинити
+            Записую… натисни ще раз, щоб зупинити
           </p>
+        )}
+        {isTranscribing && (
+          <p className="text-center text-xs font-semibold text-ink-soft">Розпізнаю…</p>
+        )}
+        {micError && !isRecording && !isTranscribing && (
+          <p className="text-center text-xs font-semibold text-coral">{micError}</p>
         )}
         <div className="flex items-center gap-2">
           <Button
             type="button"
             size="sm"
             className="h-9 flex-1 rounded-full"
-            disabled={isParsing || isListening}
+            disabled={isParsing || isRecording || isTranscribing}
             onClick={() => void runParse(aiTextRef.current)}
           >
             {isParsing ? (
@@ -197,14 +208,18 @@ export function QuickAddTaskForm({
               type="button"
               variant="outline"
               size="icon-lg"
-              disabled={isParsing}
-              onClick={isListening ? handleMicRelease : handleMicPress}
+              disabled={isParsing || isTranscribing}
+              onClick={isRecording ? handleMicRelease : handleMicPress}
               className={cn(
-                isListening && "animate-pulse border-coral bg-coral text-white hover:bg-coral",
+                isRecording && "animate-pulse border-coral bg-coral text-white hover:bg-coral",
               )}
               aria-label="Натисни, щоб наговорити задачу"
             >
-              <Mic className="size-4" />
+              {isTranscribing ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Mic className="size-4" />
+              )}
             </Button>
           )}
         </div>

@@ -6,6 +6,7 @@ import type { ParseTaskResult } from "@/lib/ai/parse-task";
 import { parseTaskForUser } from "@/lib/ai/parse-task-for-user";
 import { insertTaskForUser } from "@/lib/tasks/insert-task";
 import { generateLinkCode, LINK_CODE_TTL_MINUTES } from "@/lib/telegram/link-code";
+import { transcribeAudio } from "@/lib/telegram/transcribe";
 import type {
   DbProject,
   DbTask,
@@ -398,6 +399,31 @@ export async function parseTaskWithAI(rawText: string): Promise<ParseTaskResult>
   // The web quick-add dialog only ever shows one task's fields — if the
   // input described more than one intent, only the first is used.
   return { ok: true, ...result.tasks[0] };
+}
+
+export async function transcribeAudioWithAI(
+  formData: FormData,
+): Promise<{ text: string } | { error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Щось пішло не так, спробуй ще раз." };
+  }
+
+  const audio = formData.get("audio");
+  if (!(audio instanceof Blob)) {
+    return { error: "Не вдалося розпізнати голосове, спробуй ще раз." };
+  }
+
+  const text = await transcribeAudio(audio, "voice.webm");
+  if (!text) {
+    return { error: "Не вдалося розпізнати голосове, спробуй ще раз." };
+  }
+
+  return { text };
 }
 
 export async function generateTelegramLinkCode(
