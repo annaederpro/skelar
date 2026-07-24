@@ -38,15 +38,15 @@ function AppHeader({
             <Link
               href="/settings"
               aria-label="Налаштування"
-              className="text-ink-soft transition-colors hover:text-ink"
+              className="flex items-center text-ink-soft transition-colors hover:text-ink"
             >
               <Settings className="size-5" />
             </Link>
-            <form action={signOut}>
+            <form action={signOut} className="flex items-center">
               <button
                 type="submit"
                 aria-label="Вийти"
-                className="text-ink-soft transition-colors hover:text-ink"
+                className="flex items-center text-ink-soft transition-colors hover:text-ink"
               >
                 <LogOut className="size-5" />
               </button>
