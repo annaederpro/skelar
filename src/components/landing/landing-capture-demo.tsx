@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
-import { cn } from "@/lib/utils";
 
 const STAGES = ["capture", "processing", "done"] as const;
 type Stage = (typeof STAGES)[number];
@@ -120,18 +119,6 @@ export function LandingCaptureDemo() {
             </div>
           </div>
         </div>
-
-        {reducedMotion && (
-          <button
-            type="button"
-            onClick={() => setStageIndex((i) => (i + 1) % STAGES.length)}
-            className={cn(
-              "mx-auto mt-4 block rounded-full bg-muted px-3.5 py-1.5 text-[12.5px] font-bold text-ink-soft transition-colors hover:bg-muted/70",
-            )}
-          >
-            ▶ Показати наступний крок
-          </button>
-        )}
       </ScrollReveal>
     </section>
   );
